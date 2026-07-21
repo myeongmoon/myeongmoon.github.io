@@ -3,50 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>myeongmoon의 포트폴리오</title>
+    <title>Face of Gradient - Interactive Art</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            line-height: 1.6;
-            color: #333;
         }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 3px solid #3498db;
-            padding-bottom: 10px;
+
+        .container {
+            position: relative;
+            width: 90vmin;
+            height: 90vmin;
+            perspective: 1000px;
         }
-        .welcome {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
+
+        .image-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease;
         }
+
+        .main-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 20px;
+            box-shadow: 0 0 60px rgba(255, 105, 180, 0.5);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+                filter: hue-rotate(0deg);
+            }
+            50% {
+                transform: translateY(-20px) scale(1.05);
+                filter: hue-rotate(30deg);
+            }
+        }
+
+        .glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            height: 80%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, rgba(255, 105, 180, 0.3), transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.5;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            animation: particle-float 4s ease-in-out infinite;
+        }
+
+        @keyframes particle-float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(var(--tx));
+                opacity: 0;
+            }
+        }
+
+        .title {
+            position: absolute;
+            top: -80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            font-weight: 900;
+            background: linear-gradient(90deg, #ff69b4, #ffa500, #00ffff, #ff69b4);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient-shift 3s ease infinite;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        @keyframes gradient-shift {
+            0%, 100% {
+                background-position: 0% center;
+            }
+            50% {
+                background-position: 100% center;
+            }
+        }
+
         .info {
-            color: #666;
-            font-size: 0.9em;
+            position: absolute;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            text-align: center;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* 클릭 효과 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            transform: scale(0);
+            animation: ripple-animation 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .title {
+                top: -60px;
+            }
+            .info {
+                bottom: -50px;
+                font-size: 0.8rem;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>🚀 myeongmoon.github.io</h1>
-    
-    <div class="welcome">
-        <h2>환영합니다!</h2>
-        <p>이 페이지는 GitHub Pages로 배포된 첫 웹사이트입니다.</p>
-        <p>앞으로 이곳에 다양한 프로젝트를 추가할 예정입니다.</p>
+    <div class="container">
+        <div class="title">FACE OF GRADIENT</div>
+        
+        <div class="image-wrapper" id="imageWrapper">
+            <div class="glow"></div>
+            <img src="gradient-face.jpg" alt="Face of Gradient" class="main-image" id="mainImage">
+            <div class="particles" id="particles"></div>
+        </div>
+        
+        <div class="info">🖱️ 마우스를 움직이거나 클릭해보세요</div>
     </div>
-    
-    <h3>프로젝트</h3>
-    <ul>
-        <li>프로젝트 1 - 준비 중</li>
-        <li>프로젝트 2 - 준비 중</li>
-    </ul>
-    
-    <div class="info">
-        <p>마지막 업데이트: 2026년 7월 21일</p>
-    </div>
+
+    <script>
+        const imageWrapper = document.getElementById('imageWrapper');
+        const mainImage = document.getElementById('mainImage');
+        const particles = document.getElementById('particles');
+        const container = document.querySelector('.container');
+
+        // 파티클 생성
+        const colors = ['#ff69b4', '#ffa500', '#00ffff', '#ffff00', '#ff0000', '#00ff00'];
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.animationDelay = Math.random() * 4 + 's';
+            particle.style.setProperty('--tx', (Math.random() - 0.5) * 100 + 'px');
+            particles.appendChild(particle);
+        }
+
+        // 마우스 따라다니는 3D 효과
+        container.addEventListener('mousemove', (e) => {
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = (y - centerY) / 20;
+            const rotateY = (centerX - x) / 20;
+            
+            imageWrapper.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        container.addEventListener('mouseleave', () => {
+            imageWrapper.style.transform = 'rotateX(0) rotateY(0)';
+        });
+
+        // 클릭 시 리플 효과
+        mainImage.addEventListener('click', (e) => {
+            const rect = mainImage.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            ripple.style.width = '10px';
+            ripple.style.height = '10px';
+            
+            imageWrapper.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
+            
+            // 클릭 시 회전 효과
+            mainImage.style.animation = 'none';
+            setTimeout(() => {
+                mainImage.style.animation = 'float 6s ease-in-out infinite';
+            }, 10);
+        });
+
+        // 터치 지원 (모바일)
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        container.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        container.addEventListener('touchmove', (e) => {
+            if (!touchStartX || !touchStartY) return;
+            
+            const touchX = e.touches[0].clientX;
+            const touchY = e.touches[0].clientY;
+            
+            const diffX = touchStartX - touchX;
+            const diffY = touchStartY - touchY;
+            
+            const rotateX = diffY / 5;
+            const rotateY = -diffX / 5;
+            
+            imageWrapper.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        container.addEventListener('touchend', () => {
+            imageWrapper.style.transform = 'rotateX(0) rotateY(0)';
+            touchStartX = 0;
+            touchStartY = 0;
+        });
+    </script>
 </body>
 </html>
