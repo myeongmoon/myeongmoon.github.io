@@ -37,22 +37,46 @@
         }
 
         .main-image {
+            display: none; /* 원본 이미지는 숨김 */
+        }
+
+        .pixel-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            display: grid;
+            grid-template-columns: repeat(20, 1fr);
+            grid-template-rows: repeat(20, 1fr);
             border-radius: 20px;
+            overflow: hidden;
             box-shadow: 0 0 60px rgba(255, 105, 180, 0.5);
-            animation: float 6s ease-in-out infinite;
+        }
+
+        .pixel {
+            width: 100%;
+            height: 100%;
+            background-size: 2000% 2000%;
+            animation: pixel-wave var(--duration) ease-in-out infinite;
+            animation-delay: var(--delay);
+        }
+
+        @keyframes pixel-wave {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+            }
+            50% {
+                transform: translateY(var(--offset)) scale(1.05);
+            }
         }
 
         @keyframes float {
             0%, 100% {
-                transform: translateY(0px) scale(1);
                 filter: hue-rotate(0deg);
             }
             50% {
-                transform: translateY(-20px) scale(1.05);
-                filter: hue-rotate(30deg);
+                filter: hue-rotate(20deg);
             }
         }
 
@@ -195,7 +219,8 @@
         
         <div class="image-wrapper" id="imageWrapper">
             <div class="glow"></div>
-            <img src="gradient-face.jpg" alt="Face of Gradient" class="main-image" id="mainImage">
+            <img src="gradient-face.jpg" alt="Face of Gradient" class="main-image" id="mainImage" style="display:none;">
+            <div class="pixel-grid" id="pixelGrid"></div>
             <div class="particles" id="particles"></div>
         </div>
         
@@ -207,6 +232,41 @@
         const mainImage = document.getElementById('mainImage');
         const particles = document.getElementById('particles');
         const container = document.querySelector('.container');
+        const pixelGrid = document.getElementById('pixelGrid');
+
+        // 픽셀 그리드 생성
+        const gridSize = 20; // 20x20 그리드
+        const totalPixels = gridSize * gridSize;
+
+        // 이미지 로드 후 픽셀 그리드 생성
+        const img = new Image();
+        img.src = 'gradient-face.jpg';
+        img.onload = function() {
+            for (let i = 0; i < totalPixels; i++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'pixel';
+                
+                const row = Math.floor(i / gridSize);
+                const col = i % gridSize;
+                
+                // 각 픽셀의 배경 위치 설정
+                const bgPosX = (col / (gridSize - 1)) * 100;
+                const bgPosY = (row / (gridSize - 1)) * 100;
+                pixel.style.backgroundImage = `url('gradient-face.jpg')`;
+                pixel.style.backgroundPosition = `${bgPosX}% ${bgPosY}%`;
+                
+                // 랜덤한 애니메이션 속도와 딜레이
+                const duration = 2 + Math.random() * 3; // 2-5초
+                const delay = Math.random() * 2; // 0-2초
+                const offset = -15 + Math.random() * 30; // -15px ~ +15px
+                
+                pixel.style.setProperty('--duration', duration + 's');
+                pixel.style.setProperty('--delay', delay + 's');
+                pixel.style.setProperty('--offset', offset + 'px');
+                
+                pixelGrid.appendChild(pixel);
+            }
+        };
 
         // 파티클 생성
         const colors = ['#ff69b4', '#ffa500', '#00ffff', '#ffff00', '#ff0000', '#00ff00'];
@@ -240,8 +300,8 @@
         });
 
         // 클릭 시 리플 효과
-        mainImage.addEventListener('click', (e) => {
-            const rect = mainImage.getBoundingClientRect();
+        pixelGrid.addEventListener('click', (e) => {
+            const rect = pixelGrid.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             
@@ -255,12 +315,6 @@
             imageWrapper.appendChild(ripple);
             
             setTimeout(() => ripple.remove(), 600);
-            
-            // 클릭 시 회전 효과
-            mainImage.style.animation = 'none';
-            setTimeout(() => {
-                mainImage.style.animation = 'float 6s ease-in-out infinite';
-            }, 10);
         });
 
         // 터치 지원 (모바일)
