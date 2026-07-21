@@ -37,37 +37,39 @@
         }
 
         .main-image {
-            display: none; /* 원본 이미지는 숨김 */
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 20px;
+            box-shadow: 0 0 60px rgba(255, 105, 180, 0.5);
+            filter: contrast(1.05) saturate(1.1);
         }
 
-        .pixel-grid {
+        .slice-container {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            display: grid;
-            grid-template-columns: repeat(20, 1fr);
-            grid-template-rows: repeat(20, 1fr);
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 0 60px rgba(255, 105, 180, 0.5);
         }
 
-        .pixel {
+        .slice {
+            position: absolute;
             width: 100%;
-            height: 100%;
-            background-size: 2000% 2000%;
-            animation: pixel-wave var(--duration) ease-in-out infinite;
+            background-size: cover;
+            background-position: center;
+            animation: slice-wave var(--duration) ease-in-out infinite;
             animation-delay: var(--delay);
         }
 
-        @keyframes pixel-wave {
+        @keyframes slice-wave {
             0%, 100% {
-                transform: translateY(0px) scale(1);
+                transform: translateY(0px);
             }
             50% {
-                transform: translateY(var(--offset)) scale(1.05);
+                transform: translateY(var(--offset));
             }
         }
 
@@ -219,8 +221,7 @@
         
         <div class="image-wrapper" id="imageWrapper">
             <div class="glow"></div>
-            <img src="gradient-face.jpg" alt="Face of Gradient" class="main-image" id="mainImage" style="display:none;">
-            <div class="pixel-grid" id="pixelGrid"></div>
+            <div class="slice-container" id="sliceContainer"></div>
             <div class="particles" id="particles"></div>
         </div>
         
@@ -229,42 +230,53 @@
 
     <script>
         const imageWrapper = document.getElementById('imageWrapper');
-        const mainImage = document.getElementById('mainImage');
         const particles = document.getElementById('particles');
         const container = document.querySelector('.container');
-        const pixelGrid = document.getElementById('pixelGrid');
+        const sliceContainer = document.getElementById('sliceContainer');
 
-        // 픽셀 그리드 생성
-        const gridSize = 20; // 20x20 그리드
-        const totalPixels = gridSize * gridSize;
-
-        // 이미지 로드 후 픽셀 그리드 생성
+        // 이미지를 가로 슬라이스로 나누기 (수평 스트립)
+        const sliceCount = 30; // 30개의 수평 레이어
         const img = new Image();
         img.src = 'gradient-face.jpg';
+        
         img.onload = function() {
-            for (let i = 0; i < totalPixels; i++) {
-                const pixel = document.createElement('div');
-                pixel.className = 'pixel';
+            const sliceHeight = 100 / sliceCount; // 각 슬라이스 높이 (%)
+            
+            for (let i = 0; i < sliceCount; i++) {
+                const slice = document.createElement('div');
+                slice.className = 'slice';
+                slice.style.backgroundImage = `url('gradient-face.jpg')`;
+                slice.style.height = sliceHeight + '%';
+                slice.style.top = (i * sliceHeight) + '%';
                 
-                const row = Math.floor(i / gridSize);
-                const col = i % gridSize;
+                // 각 슬라이스의 배경 위치 조정 (전체 이미지를 보여주되 해당 영역만)
+                const bgSize = '100%';
+                const bgPosY = -(i * sliceHeight);
+                slice.style.backgroundSize = `100% ${sliceCount * 100}%`;
+                slice.style.backgroundPosition = `center ${bgPosY}%`;
                 
-                // 각 픽셀의 배경 위치 설정
-                const bgPosX = (col / (gridSize - 1)) * 100;
-                const bgPosY = (row / (gridSize - 1)) * 100;
-                pixel.style.backgroundImage = `url('gradient-face.jpg')`;
-                pixel.style.backgroundPosition = `${bgPosX}% ${bgPosY}%`;
+                // 홀수/짝수 레이어마다 다른 움직임
+                const isEven = i % 2 === 0;
+                const duration = 2 + (i % 5) * 0.5; // 2초 ~ 4초
+                const delay = (i % 7) * 0.2; // 0초 ~ 1.4초
+                const offset = isEven ? (-8 - Math.random() * 8) : (8 + Math.random() * 8); // 반대 방향
                 
-                // 랜덤한 애니메이션 속도와 딜레이
-                const duration = 2 + Math.random() * 3; // 2-5초
-                const delay = Math.random() * 2; // 0-2초
-                const offset = -15 + Math.random() * 30; // -15px ~ +15px
+                slice.style.setProperty('--duration', duration + 's');
+                slice.style.setProperty('--delay', delay + 's');
+                slice.style.setProperty('--offset', offset + 'px');
                 
-                pixel.style.setProperty('--duration', duration + 's');
-                pixel.style.setProperty('--delay', delay + 's');
-                pixel.style.setProperty('--offset', offset + 'px');
+                // 마우스 오버 시 더 강한 효과
+                slice.addEventListener('mouseenter', function() {
+                    this.style.transform = `translateY(${offset * 2}px)`;
+                    this.style.filter = 'brightness(1.2)';
+                });
                 
-                pixelGrid.appendChild(pixel);
+                slice.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                    this.style.filter = '';
+                });
+                
+                sliceContainer.appendChild(slice);
             }
         };
 
@@ -300,8 +312,8 @@
         });
 
         // 클릭 시 리플 효과
-        pixelGrid.addEventListener('click', (e) => {
-            const rect = pixelGrid.getBoundingClientRect();
+        sliceContainer.addEventListener('click', (e) => {
+            const rect = sliceContainer.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             
