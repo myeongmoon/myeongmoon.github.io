@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Rain Umbrella</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@300;400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f1e8;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            cursor: none;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* 타이틀 */
+        .title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+            color: rgba(92, 76, 60, 0.15);
+            font-size: clamp(4rem, 12vw, 10rem);
+            font-weight: 700;
+            letter-spacing: -4px;
+            line-height: 0.9;
+        }
+
+        /* 네비게이션 */
+        .nav-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            padding: 15px 30px;
+            background: #5c4c3c;
+            color: #f5f1e8;
+            text-decoration: none;
+            border: none;
+            transition: all 0.3s;
+            z-index: 1000;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .nav-btn:hover {
+            background: #3d2f23;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(92, 76, 60, 0.3);
+        }
+
+        /* 픽셀 우산 커서 */
+        .umbrella-cursor {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.08s ease;
+        }
+
+        /* 인포 */
+        .info {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(92, 76, 60, 0.5);
+            font-size: 0.9rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            z-index: 10;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        /* 통계 */
+        .stats {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(92, 76, 60, 0.9);
+            color: #f5f1e8;
+            padding: 20px 30px;
+            z-index: 100;
+            font-size: 0.85rem;
+            font-weight: 300;
+        }
+
+        .stat-item {
+            margin: 8px 0;
+            letter-spacing: 2px;
+        }
+
+        .stat-number {
+            font-weight: 700;
+            margin-left: 10px;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .umbrella-cursor {
+                display: none;
+            }
+            body {
+                cursor: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="nav-btn">← HOME</a>
+
+    <!-- 픽셀 우산 커서 -->
+    <div class="umbrella-cursor" id="umbrellaCursor"></div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="title">
+        PIXEL<br>RAIN
+    </div>
+
+    <div class="stats">
+        <div class="stat-item">
+            CLEARED<span class="stat-number" id="cleared">0</span>
+        </div>
+        <div class="stat-item">
+            ACTIVE<span class="stat-number" id="active">0</span>
+        </div>
+    </div>
+
+    <div class="info">MOVE TO CLEAR THE RAIN</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const umbrellaCursor = document.getElementById('umbrellaCursor');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // 통계
+        let clearedCount = 0;
+
+        // 마우스
+        const mouse = {
+            x: width / 2,
+            y: height / 2,
+            vx: 0,
+            vy: 0,
+            trail: [] // 마우스 궤적
+        };
+
+        // 픽셀 우산 생성 (직사각형 스타일)
+        function createPixelUmbrella() {
+            umbrellaCursor.innerHTML = '';
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '120');
+            svg.setAttribute('height', '120');
+            svg.setAttribute('viewBox', '0 0 120 120');
+            
+            // 우산 형태 (직사각형 픽셀들로)
+            const umbrellaPixels = [
+                // 우산 상단 (넓은 부분)
+                {x: 40, y: 10, w: 8, h: 25}, {x: 50, y: 10, w: 8, h: 25}, {x: 60, y: 10, w: 8, h: 25}, {x: 70, y: 10, w: 8, h: 25},
+                {x: 30, y: 15, w: 8, h: 20}, {x: 80, y: 15, w: 8, h: 20},
+                {x: 20, y: 20, w: 8, h: 18}, {x: 90, y: 20, w: 8, h: 18},
+                {x: 10, y: 25, w: 8, h: 15}, {x: 100, y: 25, w: 8, h: 15},
+                
+                // 우산 중간 (타이트해지는 부분)
+                {x: 35, y: 35, w: 6, h: 15}, {x: 45, y: 38, w: 6, h: 15}, {x: 55, y: 38, w: 6, h: 15}, {x: 65, y: 35, w: 6, h: 15}, {x: 75, y: 35, w: 6, h: 15},
+                {x: 25, y: 40, w: 6, h: 12}, {x: 85, y: 40, w: 6, h: 12},
+                
+                // 손잡이
+                {x: 55, y: 50, w: 6, h: 35},
+                {x: 55, y: 85, w: 15, h: 6},
+            ];
+
+            umbrellaPixels.forEach(pixel => {
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', pixel.x);
+                rect.setAttribute('y', pixel.y);
+                rect.setAttribute('width', pixel.w);
+                rect.setAttribute('height', pixel.h);
+                rect.setAttribute('fill', '#5c4c3c');
+                rect.setAttribute('stroke', 'rgba(245, 241, 232, 0.3)');
+                rect.setAttribute('stroke-width', '0.5');
+                svg.appendChild(rect);
+            });
+
+            umbrellaCursor.appendChild(svg);
+        }
+
+        createPixelUmbrella();
+
+        // 마우스 이벤트
+        document.addEventListener('mousemove', (e) => {
+            const dx = e.clientX - mouse.x;
+            const dy = e.clientY - mouse.y;
+            
+            mouse.vx = dx;
+            mouse.vy = dy;
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            
+            // 마우스 궤적 저장 (최근 10개)
+            mouse.trail.push({ x: mouse.x, y: mouse.y, time: Date.now() });
+            if (mouse.trail.length > 10) {
+                mouse.trail.shift();
+            }
+            
+            // 우산 커서 위치
+            umbrellaCursor.style.left = (e.clientX - 60) + 'px';
+            umbrellaCursor.style.top = (e.clientY - 60) + 'px';
+            
+            // 움직임에 따른 기울기
+            const tiltX = Math.max(-8, Math.min(8, dx * 0.2));
+            umbrellaCursor.style.transform = `rotate(${tiltX}deg)`;
+        });
+
+        // 직사각형 픽셀 클래스
+        class RectPixel {
+            constructor(x, y, initialDensity) {
+                this.gridX = x;
+                this.gridY = y;
+                this.x = x;
+                this.y = y;
+                this.originalX = x;
+                this.originalY = y;
+                
+                // 이미지 패턴처럼 - 위쪽은 밀집, 아래쪽은 흩어짐
+                this.density = initialDensity;
+                this.width = 4;
+                this.height = this.density > 0.8 ? 12 : (this.density > 0.5 ? 20 : 30);
+                
+                // 미세한 움직임
+                this.wobblePhase = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.5 + Math.random() * 0.5;
+                this.wobbleAmount = 0.3 + Math.random() * 0.5;
+                
+                // 밀려나는 효과
+                this.pushX = 0;
+                this.pushY = 0;
+                this.pushDecay = 0.15;
+                
+                // 색상 (브라운 계열)
+                const shade = Math.floor(Math.random() * 30);
+                this.color = `rgb(${92 - shade}, ${76 - shade}, ${60 - shade})`;
+                
+                this.cleared = false;
+                this.opacity = 1;
+            }
+
+            update(time) {
+                if (this.cleared) {
+                    this.opacity -= 0.02;
+                    if (this.opacity <= 0) {
+                        return;
+                    }
+                }
+                
+                // 미세한 떨림 (비 느낌)
+                const wobbleX = Math.sin(time * this.wobbleSpeed + this.wobblePhase) * this.wobbleAmount;
+                const wobbleY = Math.cos(time * this.wobbleSpeed * 0.7 + this.wobblePhase) * this.wobbleAmount;
+                
+                // 마우스와의 거리 계산
+                const dx = this.originalX - mouse.x;
+                const dy = this.originalY - mouse.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // 우산 영역 (더 큰 영역)
+                const umbrellaRadius = 100;
+                
+                if (distance < umbrellaRadius && !this.cleared) {
+                    // 밀려나는 힘
+                    const force = (1 - distance / umbrellaRadius) * 15;
+                    const angle = Math.atan2(dy, dx);
+                    
+                    this.pushX += Math.cos(angle) * force * 0.5;
+                    this.pushY += Math.sin(angle) * force * 0.5;
+                    
+                    // 너무 멀리 밀려나면 클리어 처리
+                    if (Math.abs(this.pushX) > 100 || Math.abs(this.pushY) > 100) {
+                        this.cleared = true;
+                        clearedCount++;
+                    }
+                }
+                
+                // 밀린 힘 감쇠
+                this.pushX *= (1 - this.pushDecay);
+                this.pushY *= (1 - this.pushDecay);
+                
+                // 최종 위치
+                this.x = this.originalX + wobbleX + this.pushX;
+                this.y = this.originalY + wobbleY + this.pushY;
+            }
+
+            draw() {
+                if (this.opacity <= 0) return;
+                
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                
+                // 직사각형 픽셀
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - this.width / 2, this.y, this.width, this.height);
+                
+                // 미세한 테두리
+                ctx.strokeStyle = 'rgba(245, 241, 232, 0.2)';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(this.x - this.width / 2, this.y, this.width, this.height);
+                
+                ctx.restore();
+            }
+        }
+
+        // 픽셀 그리드 생성 (이미지 패턴 재현)
+        const pixels = [];
+        const cols = 60;
+        const rows = 50;
+        const spacingX = width / cols;
+        const spacingY = height / rows;
+
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = col * spacingX + spacingX / 2;
+                const y = row * spacingY;
+                
+                // 위에서 아래로 갈수록 밀도 감소 (이미지 패턴)
+                const density = 1 - (row / rows) * 0.8;
+                
+                // 밀도에 따라 픽셀 생성 여부 결정
+                if (Math.random() < density) {
+                    // 약간의 랜덤 오프셋
+                    const offsetX = (Math.random() - 0.5) * spacingX * 0.3;
+                    pixels.push(new RectPixel(x + offsetX, y, density));
+                }
+            }
+        }
+
+        let time = 0;
+
+        // 애니메이션
+        function animate() {
+            time += 0.01;
+
+            // 배경
+            ctx.fillStyle = '#f5f1e8';
+            ctx.fillRect(0, 0, width, height);
+
+            // 픽셀 업데이트 및 그리기
+            let activeCount = 0;
+            pixels.forEach(pixel => {
+                pixel.update(time);
+                pixel.draw();
+                if (!pixel.cleared) activeCount++;
+            });
+
+            // 통계 업데이트
+            document.getElementById('cleared').textContent = clearedCount;
+            document.getElementById('active').textContent = activeCount;
+
+            requestAnimationFrame(animate);
+        }
+
+        // 리사이즈
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // 시작
+        animate();
+
+        // 초기 커서 위치
+        umbrellaCursor.style.left = (width / 2 - 60) + 'px';
+        umbrellaCursor.style.top = (height / 2 - 60) + 'px';
+    </script>
+</body>
+</html>
