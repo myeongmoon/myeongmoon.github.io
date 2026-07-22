@@ -27,33 +27,22 @@
             left: 0;
         }
 
-        /* 타이틀 */
-        .title-section {
+        /* 숨겨진 텍스트 (우산으로 드러남) */
+        .hidden-text {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
             pointer-events: none;
-            z-index: 5;
-            mix-blend-mode: difference;
-        }
-
-        .main-title {
-            font-size: clamp(3rem, 10vw, 8rem);
+            z-index: 1;
+            font-size: clamp(4rem, 12vw, 10rem);
             font-weight: 700;
-            color: #ffffff;
+            color: #000000;
             letter-spacing: -4px;
             line-height: 0.9;
-            margin-bottom: 20px;
-        }
-
-        .subtitle {
-            font-size: clamp(0.8rem, 2vw, 1.2rem);
-            font-weight: 400;
-            color: #ffffff;
-            letter-spacing: 6px;
-            opacity: 0.7;
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
 
         /* 네비게이션 */
@@ -78,15 +67,20 @@
             color: #000000;
         }
 
-        /* 우산 커서 */
+        /* 우산 커서 (픽셀 스타일) */
         .umbrella-cursor {
             position: fixed;
-            width: 120px;
-            height: 120px;
             pointer-events: none;
             z-index: 9999;
             transition: transform 0.05s ease;
-            mix-blend-mode: difference;
+        }
+
+        .umbrella-pixel {
+            width: 4px;
+            height: 4px;
+            background: #000000;
+            position: absolute;
+            box-shadow: 0 0 1px rgba(255, 255, 255, 0.5);
         }
 
         /* 정보 텍스트 */
@@ -151,37 +145,17 @@
 <body>
     <a href="index.html" class="nav-btn">← HOME</a>
 
-    <!-- 우산 커서 -->
-    <div class="umbrella-cursor" id="umbrellaCursor">
-        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <!-- 우산 갓 -->
-            <path d="M 20 55 Q 60 25 100 55 L 100 60 Q 60 30 20 60 Z" 
-                  fill="#ffffff" stroke="#000000" stroke-width="3"/>
-            
-            <!-- 우산 살 -->
-            <line x1="60" y1="30" x2="60" y2="55" stroke="#000000" stroke-width="3"/>
-            <line x1="60" y1="30" x2="30" y2="57" stroke="#000000" stroke-width="2"/>
-            <line x1="60" y1="30" x2="90" y2="57" stroke="#000000" stroke-width="2"/>
-            <line x1="60" y1="30" x2="45" y2="53" stroke="#000000" stroke-width="2"/>
-            <line x1="60" y1="30" x2="75" y2="53" stroke="#000000" stroke-width="2"/>
-            
-            <!-- 우산 손잡이 -->
-            <path d="M 60 55 L 60 95 Q 60 100 65 100 L 72 100" 
-                  stroke="#000000" stroke-width="3" fill="none" stroke-linecap="round"/>
-            
-            <!-- 보호 영역 표시 (반투명) -->
-            <ellipse cx="60" cy="60" rx="50" ry="10" 
-                     fill="none" stroke="#000000" stroke-width="1" 
-                     stroke-dasharray="4,4" opacity="0.3"/>
-        </svg>
-    </div>
+<body>
+    <a href="index.html" class="nav-btn">← HOME</a>
+
+    <!-- 우산 커서 (픽셀로 그림) -->
+    <div class="umbrella-cursor" id="umbrellaCursor"></div>
 
     <canvas id="canvas"></canvas>
 
-    <!-- 타이틀 -->
-    <div class="title-section">
-        <h1 class="main-title">NOISE<br>RAIN<br>SHIELD</h1>
-        <p class="subtitle">PROTECTION</p>
+    <!-- 숨겨진 텍스트 -->
+    <div class="hidden-text" id="hiddenText">
+        SAFE<br>ZONE
     </div>
 
     <!-- 통계 -->
@@ -190,23 +164,24 @@
             BLOCKED<span class="stat-number" id="blocked">0</span>
         </div>
         <div class="stat-item">
-            FALLING<span class="stat-number" id="falling">0</span>
+            REVEALED<span class="stat-number" id="revealed">0</span>%
         </div>
     </div>
 
-    <div class="info">MOVE TO SHIELD</div>
+    <div class="info">MOVE TO REVEAL</div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const umbrellaCursor = document.getElementById('umbrellaCursor');
+        const hiddenText = document.getElementById('hiddenText');
 
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
         // 통계
         let blockedCount = 0;
-        let fallingCount = 0;
+        let revealedPercent = 0;
 
         // 마우스
         const mouse = {
@@ -215,6 +190,45 @@
             vx: 0,
             vy: 0
         };
+
+        // 픽셀 우산 생성
+        function createPixelUmbrella() {
+            umbrellaCursor.innerHTML = '';
+            
+            // 우산 형태를 픽셀로 정의 (80x80 영역)
+            const umbrellaPattern = [
+                // 우산 상단 곡선 (y: 0-20)
+                {x: 40, y: 0}, {x: 36, y: 0}, {x: 44, y: 0},
+                {x: 32, y: 4}, {x: 40, y: 4}, {x: 48, y: 4},
+                {x: 28, y: 8}, {x: 36, y: 8}, {x: 44, y: 8}, {x: 52, y: 8},
+                {x: 24, y: 12}, {x: 32, y: 12}, {x: 40, y: 12}, {x: 48, y: 12}, {x: 56, y: 12},
+                {x: 20, y: 16}, {x: 28, y: 16}, {x: 36, y: 16}, {x: 44, y: 16}, {x: 52, y: 16}, {x: 60, y: 16},
+                {x: 16, y: 20}, {x: 24, y: 20}, {x: 32, y: 20}, {x: 40, y: 20}, {x: 48, y: 20}, {x: 56, y: 20}, {x: 64, y: 20},
+                
+                // 우산 중간
+                {x: 12, y: 24}, {x: 20, y: 24}, {x: 28, y: 24}, {x: 40, y: 24}, {x: 52, y: 24}, {x: 60, y: 24}, {x: 68, y: 24},
+                {x: 8, y: 28}, {x: 16, y: 28}, {x: 24, y: 28}, {x: 40, y: 28}, {x: 56, y: 28}, {x: 64, y: 28}, {x: 72, y: 28},
+                {x: 4, y: 32}, {x: 12, y: 32}, {x: 20, y: 32}, {x: 40, y: 32}, {x: 60, y: 32}, {x: 68, y: 32}, {x: 76, y: 32},
+                
+                // 우산 살 (중앙)
+                {x: 40, y: 0}, {x: 40, y: 4}, {x: 40, y: 8}, {x: 40, y: 12}, {x: 40, y: 16}, {x: 40, y: 20}, 
+                {x: 40, y: 24}, {x: 40, y: 28}, {x: 40, y: 32}, {x: 40, y: 36},
+                
+                // 손잡이
+                {x: 40, y: 40}, {x: 40, y: 44}, {x: 40, y: 48}, {x: 40, y: 52}, {x: 40, y: 56},
+                {x: 40, y: 60}, {x: 44, y: 60}, {x: 48, y: 60}, {x: 52, y: 60},
+            ];
+
+            umbrellaPattern.forEach(pos => {
+                const pixel = document.createElement('div');
+                pixel.className = 'umbrella-pixel';
+                pixel.style.left = pos.x + 'px';
+                pixel.style.top = pos.y + 'px';
+                umbrellaCursor.appendChild(pixel);
+            });
+        }
+
+        createPixelUmbrella();
 
         // 커서 업데이트
         document.addEventListener('mousemove', (e) => {
@@ -227,228 +241,147 @@
             mouse.y = e.clientY;
             
             // 우산 커서 위치
-            umbrellaCursor.style.left = (e.clientX - 60) + 'px';
-            umbrellaCursor.style.top = (e.clientY - 60) + 'px';
+            umbrellaCursor.style.left = (e.clientX - 40) + 'px';
+            umbrellaCursor.style.top = (e.clientY - 30) + 'px';
             
             // 움직임에 따른 기울기
-            const tiltX = Math.max(-10, Math.min(10, dx * 0.3));
+            const tiltX = Math.max(-5, Math.min(5, dx * 0.2));
             umbrellaCursor.style.transform = `rotateZ(${tiltX}deg)`;
         });
 
-        // 노이즈 파티클 클래스
-        class NoiseParticle {
-            constructor() {
-                this.reset();
-                this.y = Math.random() * height * -1;
-            }
-
-            reset() {
-                this.x = Math.random() * width;
-                this.y = Math.random() * -800 - 50;
-                this.size = Math.random() < 0.4 ? 2 : (Math.random() < 0.5 ? 4 : 6);
-                this.speed = 4 + Math.random() * 6;
+        // 노이즈 블록 클래스 (이미지 패턴 유지)
+        class NoiseBlock {
+            constructor(x, y, pattern) {
+                this.x = x;
+                this.y = y;
+                this.originalY = y;
+                this.pattern = pattern; // 픽셀 패턴 배열
+                this.speed = 0.5; // 느리게
                 this.blocked = false;
-                this.bounceVx = 0;
-                this.bounceVy = 0;
-                this.rotation = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.4;
                 this.opacity = 1;
-                this.glitch = Math.random() > 0.7;
-                this.glitchOffset = 0;
-                
-                // 노이즈 패턴 (여러 픽셀 클러스터)
-                this.cluster = [];
-                const clusterSize = Math.floor(Math.random() * 3) + 2;
-                for (let i = 0; i < clusterSize; i++) {
-                    this.cluster.push({
-                        offsetX: (Math.random() - 0.5) * this.size * 3,
-                        offsetY: (Math.random() - 0.5) * this.size * 3,
-                        size: Math.random() < 0.5 ? 1 : 2
-                    });
-                }
+                this.cleared = false;
             }
 
-            update(time) {
-                if (!this.blocked) {
+            update() {
+                if (!this.blocked && !this.cleared) {
                     this.y += this.speed;
-                    this.rotation += this.rotationSpeed * 0.5;
-                    
-                    // 글리치 효과
-                    if (this.glitch) {
-                        this.glitchOffset = Math.sin(time * 20 + this.y * 0.1) * 4;
-                    }
                     
                     // 우산 충돌 체크
                     const dx = this.x - mouse.x;
                     const dy = this.y - mouse.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
                     
-                    // 우산 영역 (타원형)
-                    const inUmbrellaX = Math.abs(dx) < 70;
-                    const inUmbrellaY = dy < 15 && dy > -30;
+                    // 우산 영역 (더 정확하게)
+                    const inUmbrellaX = Math.abs(dx) < 80;
+                    const inUmbrellaY = dy < 40 && dy > -10;
                     
-                    if (inUmbrellaX && inUmbrellaY && distance < 80) {
+                    if (inUmbrellaX && inUmbrellaY) {
                         this.blocked = true;
+                        this.cleared = true;
                         blockedCount++;
-                        
-                        // 튕김 효과
-                        const angle = Math.atan2(dy, dx);
-                        const force = 4 + Math.random() * 4;
-                        this.bounceVx = Math.cos(angle) * force;
-                        this.bounceVy = Math.sin(angle) * force - 3;
-                        this.rotationSpeed = (Math.random() - 0.5) * 0.8;
                     }
                     
                     // 화면 밖으로 나가면 리셋
                     if (this.y > height + 50) {
-                        this.reset();
-                    }
-                } else {
-                    // 튕겨나간 후
-                    this.x += this.bounceVx;
-                    this.y += this.bounceVy;
-                    this.bounceVy += 0.2; // 중력
-                    this.rotation += this.rotationSpeed;
-                    this.opacity -= 0.02;
-                    
-                    // 사라지면 리셋
-                    if (this.opacity <= 0 || this.y > height + 100) {
-                        this.reset();
+                        this.y = this.originalY - height - 50;
+                        this.blocked = false;
+                        this.cleared = false;
                     }
                 }
             }
 
             draw() {
-                if (this.opacity <= 0) return;
+                if (this.cleared) return;
                 
                 ctx.save();
                 ctx.globalAlpha = this.opacity;
-                ctx.translate(this.x + this.glitchOffset, this.y);
-                ctx.rotate(this.rotation);
                 
-                // 클러스터 그리기
-                this.cluster.forEach(pixel => {
-                    ctx.fillStyle = '#000000';
+                // 패턴 그리기
+                this.pattern.forEach(pixel => {
+                    ctx.fillStyle = pixel.color === 'black' ? '#000000' : '#ffffff';
                     ctx.fillRect(
-                        pixel.offsetX - pixel.size / 2,
-                        pixel.offsetY - pixel.size / 2,
+                        this.x + pixel.x,
+                        this.y + pixel.y,
                         pixel.size,
                         pixel.size
                     );
-                    
-                    // 약간의 테두리 (글리치 느낌)
-                    if (Math.random() > 0.7) {
-                        ctx.strokeStyle = '#ffffff';
-                        ctx.lineWidth = 0.5;
-                        ctx.strokeRect(
-                            pixel.offsetX - pixel.size / 2,
-                            pixel.offsetY - pixel.size / 2,
-                            pixel.size,
-                            pixel.size
-                        );
-                    }
                 });
                 
                 ctx.restore();
             }
         }
 
-        // 배경 노이즈 그리드
-        class BackgroundNoise {
-            constructor() {
-                this.particles = [];
-                const spacing = 30;
-                for (let x = 0; x < width; x += spacing) {
-                    for (let y = 0; y < height; y += spacing) {
-                        if (Math.random() > 0.85) {
-                            this.particles.push({
-                                x: x + Math.random() * spacing,
-                                y: y + Math.random() * spacing,
-                                size: Math.random() < 0.5 ? 1 : 2,
-                                opacity: 0.1 + Math.random() * 0.2,
-                                originalX: x,
-                                originalY: y
+        // 노이즈 패턴 생성 (이미지처럼)
+        function generateNoisePattern() {
+            const pattern = [];
+            const gridSize = 20; // 20x20 블록
+            
+            for (let px = 0; px < gridSize; px++) {
+                for (let py = 0; py < gridSize; py++) {
+                    const random = Math.random();
+                    if (random < 0.5) { // 50% 확률로 검은색
+                        // 클러스터 효과
+                        const clusterSize = Math.random() < 0.7 ? 1 : (Math.random() < 0.5 ? 2 : 3);
+                        for (let i = 0; i < clusterSize; i++) {
+                            pattern.push({
+                                x: px * 4 + Math.floor(Math.random() * 4),
+                                y: py * 4 + Math.floor(Math.random() * 4),
+                                size: Math.random() < 0.5 ? 2 : 3,
+                                color: 'black'
                             });
                         }
                     }
                 }
             }
-
-            update() {
-                this.particles.forEach(p => {
-                    const dx = p.originalX - mouse.x;
-                    const dy = p.originalY - mouse.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (distance < 100) {
-                        const force = (1 - distance / 100) * 20;
-                        p.x = p.originalX + (dx / distance) * force;
-                        p.y = p.originalY + (dy / distance) * force;
-                    } else {
-                        p.x += (p.originalX - p.x) * 0.1;
-                        p.y += (p.originalY - p.y) * 0.1;
-                    }
-                });
-            }
-
-            draw() {
-                this.particles.forEach(p => {
-                    ctx.fillStyle = `rgba(0, 0, 0, ${p.opacity})`;
-                    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-                });
-            }
+            
+            return pattern;
         }
 
-        // 우산 보호 영역 시각화
-        function drawUmbrellaShield() {
-            ctx.save();
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            
-            // 타원형 실드
-            ctx.beginPath();
-            ctx.ellipse(mouse.x, mouse.y + 5, 70, 15, 0, 0, Math.PI * 2);
-            ctx.stroke();
-            
-            ctx.restore();
+        // 노이즈 블록 그리드 생성
+        const blocks = [];
+        const blockSpacing = 100;
+        
+        for (let x = 0; x < width + blockSpacing; x += blockSpacing) {
+            for (let y = -height * 2; y < height; y += blockSpacing) {
+                const pattern = generateNoisePattern();
+                blocks.push(new NoiseBlock(x, y, pattern));
+            }
         }
-
-        // 초기화
-        const particles = Array.from({ length: 400 }, () => new NoiseParticle());
-        const backgroundNoise = new BackgroundNoise();
 
         let time = 0;
+        let lastRevealUpdate = 0;
 
         // 애니메이션
         function animate() {
             time += 0.02;
 
-            // 배경 (약간의 페이드)
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            // 배경
+            ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, width, height);
 
-            // 배경 노이즈
-            backgroundNoise.update();
-            backgroundNoise.draw();
-
-            // 우산 보호 영역
-            drawUmbrellaShield();
-
-            // 파티클 업데이트
-            fallingCount = 0;
-            particles.forEach(particle => {
-                particle.update(time);
-                particle.draw();
-                
-                if (!particle.blocked && particle.y > 0 && particle.y < height) {
-                    fallingCount++;
-                }
+            // 블록 업데이트 및 그리기
+            let clearedCount = 0;
+            blocks.forEach(block => {
+                block.update();
+                block.draw();
+                if (block.cleared) clearedCount++;
             });
 
+            // 드러난 비율 계산
+            revealedPercent = Math.floor((clearedCount / blocks.length) * 100);
+            
+            // 텍스트 표시 (30% 이상 드러나면)
+            if (revealedPercent > 30) {
+                hiddenText.style.opacity = Math.min(1, (revealedPercent - 30) / 70);
+            } else {
+                hiddenText.style.opacity = 0;
+            }
+
             // 통계 업데이트
-            document.getElementById('blocked').textContent = blockedCount;
-            document.getElementById('falling').textContent = fallingCount;
+            if (time - lastRevealUpdate > 0.1) {
+                document.getElementById('blocked').textContent = blockedCount;
+                document.getElementById('revealed').textContent = revealedPercent;
+                lastRevealUpdate = time;
+            }
 
             requestAnimationFrame(animate);
         }
@@ -463,8 +396,8 @@
         animate();
 
         // 초기 커서 위치
-        umbrellaCursor.style.left = (width / 2 - 60) + 'px';
-        umbrellaCursor.style.top = (height / 2 - 60) + 'px';
+        umbrellaCursor.style.left = (width / 2 - 40) + 'px';
+        umbrellaCursor.style.top = (height / 2 - 30) + 'px';
     </script>
 </body>
 </html>
