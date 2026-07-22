@@ -146,6 +146,29 @@
             box-shadow: 0 5px 20px rgba(255, 105, 180, 0.4);
         }
 
+        .umbrella-btn {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .umbrella-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 255, 255, 0.3);
+        }
+
         @media (max-width: 768px) {
             .title {
                 top: -60px;
@@ -163,6 +186,7 @@
 </head>
 <body>
     <a href="gallery.html" class="gallery-btn">🎨 Gallery</a>
+    <a href="umbrella.html" class="umbrella-btn">☂️ Umbrella</a>
     
     <div class="container">
         <div class="title">FACE OF GRADIENT</div>

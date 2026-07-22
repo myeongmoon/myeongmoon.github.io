@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>모든 것을 막아주는 우산</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            cursor: none;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .title-section {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            animation: fadeIn 2s ease-out 0.5s forwards;
+        }
+
+        .main-title {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 900;
+            color: rgba(255, 255, 255, 0.1);
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .subtitle {
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .info-text {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+            z-index: 10;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+        }
+
+        .nav-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease;
+            mix-blend-mode: difference;
+        }
+
+        @media (max-width: 768px) {
+            .custom-cursor {
+                display: none;
+            }
+            body {
+                cursor: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="nav-btn">← Home</a>
+    
+    <div class="custom-cursor" id="cursor"></div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="title-section">
+        <h1 class="main-title">모든 것을 막아주는 우산</h1>
+        <p class="subtitle">THE UMBRELLA THAT BLOCKS EVERYTHING</p>
+    </div>
+
+    <div class="info-text">
+        🖱️ 마우스를 움직여 우산으로 모든 것을 막아보세요
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const cursor = document.getElementById('cursor');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // 마우스 위치
+        const mouse = {
+            x: width / 2,
+            y: height / 2,
+            vx: 0,
+            vy: 0
+        };
+
+        // 커스텀 커서
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX - 10 + 'px';
+            cursor.style.top = e.clientY - 10 + 'px';
+            
+            const dx = e.clientX - mouse.x;
+            const dy = e.clientY - mouse.y;
+            mouse.vx = dx * 0.3;
+            mouse.vy = dy * 0.3;
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        // 우산 클래스
+        class Umbrella {
+            constructor() {
+                this.x = mouse.x;
+                this.y = mouse.y;
+                this.angle = 0;
+                this.targetAngle = 0;
+                this.scale = 1;
+                this.dots = [];
+                this.createDots();
+            }
+
+            createDots() {
+                // 우산 형태를 도트로 생성
+                const umbrellaShape = [
+                    // 우산 상단 곡선
+                    { x: 0, y: -80, r: 4 },
+                    { x: -15, y: -75, r: 3 },
+                    { x: 15, y: -75, r: 3 },
+                    { x: -30, y: -65, r: 3 },
+                    { x: 30, y: -65, r: 3 },
+                    { x: -45, y: -50, r: 3 },
+                    { x: 45, y: -50, r: 3 },
+                    { x: -55, y: -30, r: 2 },
+                    { x: 55, y: -30, r: 2 },
+                    { x: -60, y: -10, r: 2 },
+                    { x: 60, y: -10, r: 2 },
+                    
+                    // 우산 살 (8개)
+                    ...this.createSpokes(),
+                    
+                    // 손잡이
+                    { x: 0, y: 0, r: 3 },
+                    { x: 0, y: 20, r: 2.5 },
+                    { x: 0, y: 40, r: 2.5 },
+                    { x: 0, y: 60, r: 2.5 },
+                    { x: 5, y: 70, r: 2 },
+                    { x: 10, y: 75, r: 2 },
+                    { x: 15, y: 75, r: 2 },
+                ];
+
+                this.dots = umbrellaShape.map(dot => ({
+                    ...dot,
+                    originalX: dot.x,
+                    originalY: dot.y,
+                    wobbleX: 0,
+                    wobbleY: 0,
+                    phase: Math.random() * Math.PI * 2
+                }));
+            }
+
+            createSpokes() {
+                const spokes = [];
+                const numSpokes = 8;
+                for (let i = 0; i < numSpokes; i++) {
+                    const angle = (Math.PI / numSpokes) * i - Math.PI / 2;
+                    for (let j = 0; j < 6; j++) {
+                        const distance = 10 + j * 10;
+                        spokes.push({
+                            x: Math.cos(angle) * distance,
+                            y: Math.sin(angle) * distance - 30,
+                            r: 2
+                        });
+                    }
+                }
+                return spokes;
+            }
+
+            update(time) {
+                // 부드럽게 마우스 따라가기
+                this.x += (mouse.x - this.x) * 0.15;
+                this.y += (mouse.y - this.y) * 0.15;
+
+                // 각도 계산 (마우스 이동 방향)
+                this.targetAngle = Math.atan2(mouse.vy, mouse.vx);
+                this.angle += (this.targetAngle - this.angle) * 0.1;
+
+                // 도트들 흔들림 효과
+                this.dots.forEach((dot, i) => {
+                    dot.wobbleX = Math.sin(time * 2 + dot.phase) * 2;
+                    dot.wobbleY = Math.cos(time * 1.5 + dot.phase) * 2;
+                });
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.angle * 0.2);
+
+                // 우산 도트 그리기
+                this.dots.forEach(dot => {
+                    const x = dot.originalX + dot.wobbleX;
+                    const y = dot.originalY + dot.wobbleY;
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, dot.r, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.fill();
+                    
+                    // 글로우 효과
+                    ctx.beginPath();
+                    ctx.arc(x, y, dot.r * 2, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.fill();
+                });
+
+                ctx.restore();
+            }
+
+            checkCollision(particle) {
+                const dx = particle.x - this.x;
+                const dy = particle.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // 우산 범위 (상단 반구 형태)
+                const umbrellaRadius = 80;
+                const isInUmbrellaZone = distance < umbrellaRadius && dy < 0;
+                
+                return isInUmbrellaZone;
+            }
+        }
+
+        // 떨어지는 파티클 (빗방울, 텍스트 등)
+        class Particle {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * height;
+                this.type = Math.random();
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = -20;
+                this.speed = 2 + Math.random() * 4;
+                this.size = 2 + Math.random() * 4;
+                this.opacity = 0.3 + Math.random() * 0.5;
+                this.blocked = false;
+                this.bounceVx = 0;
+                this.bounceVy = 0;
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+                
+                // 랜덤 텍스트
+                const texts = ['걱정', '불안', '스트레스', '압박', '두려움', '피로', '고민', '슬픔'];
+                this.text = texts[Math.floor(Math.random() * texts.length)];
+            }
+
+            update(umbrella, time) {
+                if (!this.blocked) {
+                    this.y += this.speed;
+                    this.x += Math.sin(time + this.y * 0.01) * 0.5;
+
+                    // 우산과 충돌 체크
+                    if (umbrella.checkCollision(this)) {
+                        this.blocked = true;
+                        const angle = Math.atan2(this.y - umbrella.y, this.x - umbrella.x);
+                        this.bounceVx = Math.cos(angle) * 5;
+                        this.bounceVy = Math.sin(angle) * 5 - 3;
+                    }
+                } else {
+                    // 튕겨나가는 효과
+                    this.x += this.bounceVx;
+                    this.y += this.bounceVy;
+                    this.bounceVy += 0.2; // 중력
+                    this.rotation += this.rotationSpeed;
+                    this.opacity -= 0.02;
+                }
+
+                // 화면 밖으로 나가면 리셋
+                if (this.y > height + 50 || this.opacity <= 0 || this.x < -50 || this.x > width + 50) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+
+                if (this.type < 0.3) {
+                    // 텍스트
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation);
+                    ctx.font = `${this.size * 4}px "Courier New"`;
+                    ctx.fillStyle = this.blocked ? '#ff6b6b' : '#ffffff';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.text, 0, 0);
+                } else if (this.type < 0.6) {
+                    // 도트
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = this.blocked ? '#ff6b6b' : '#ffffff';
+                    ctx.fill();
+                } else {
+                    // 선
+                    ctx.strokeStyle = this.blocked ? '#ff6b6b' : '#ffffff';
+                    ctx.lineWidth = this.size / 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.x, this.y + this.size * 3);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        // 배경 도트 그리드
+        class BackgroundDots {
+            constructor() {
+                this.dots = [];
+                const spacing = 40;
+                for (let x = 0; x < width; x += spacing) {
+                    for (let y = 0; y < height; y += spacing) {
+                        this.dots.push({
+                            x: x,
+                            y: y,
+                            originalX: x,
+                            originalY: y,
+                            size: 1,
+                            phase: Math.random() * Math.PI * 2
+                        });
+                    }
+                }
+            }
+
+            update(time, umbrella) {
+                this.dots.forEach(dot => {
+                    const dx = dot.x - umbrella.x;
+                    const dy = dot.y - umbrella.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 150) {
+                        const force = (1 - distance / 150) * 10;
+                        dot.x = dot.originalX + (dx / distance) * force;
+                        dot.y = dot.originalY + (dy / distance) * force;
+                    } else {
+                        dot.x += (dot.originalX - dot.x) * 0.1;
+                        dot.y += (dot.originalY - dot.y) * 0.1;
+                    }
+                });
+            }
+
+            draw() {
+                this.dots.forEach(dot => {
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                    ctx.fill();
+                });
+            }
+        }
+
+        // 초기화
+        const umbrella = new Umbrella();
+        const particles = Array.from({ length: 150 }, () => new Particle());
+        const backgroundDots = new BackgroundDots();
+
+        let time = 0;
+
+        // 애니메이션 루프
+        function animate() {
+            time += 0.02;
+
+            // 페이드 효과로 클리어
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            // 배경 도트
+            backgroundDots.update(time, umbrella);
+            backgroundDots.draw();
+
+            // 파티클 업데이트 및 그리기
+            particles.forEach(particle => {
+                particle.update(umbrella, time);
+                particle.draw();
+            });
+
+            // 우산 업데이트 및 그리기
+            umbrella.update(time);
+            umbrella.draw();
+
+            requestAnimationFrame(animate);
+        }
+
+        // 리사이즈
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // 시작
+        animate();
+    </script>
+</body>
+</html>
