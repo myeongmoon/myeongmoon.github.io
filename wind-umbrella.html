@@ -32,34 +32,39 @@
             position: fixed;
             pointer-events: none;
             z-index: 1;
+            background: #f4f400;
         }
 
         .frame-top {
-            top: 20px;
-            left: 20px;
-            right: 20px;
-            border-top: 3px solid #000000;
-        }
-
-        .frame-bottom {
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
             border-bottom: 3px solid #000000;
         }
 
+        .frame-bottom {
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 20px;
+            border-top: 3px solid #000000;
+        }
+
         .frame-left {
-            top: 20px;
-            bottom: 20px;
-            left: 20px;
-            border-left: 3px solid #000000;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 20px;
+            border-right: 3px solid #000000;
         }
 
         .frame-right {
-            top: 20px;
-            bottom: 20px;
-            right: 20px;
-            border-right: 3px solid #000000;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            border-left: 3px solid #000000;
         }
 
         /* 타이틀 */
@@ -99,14 +104,13 @@
             color: #000000;
         }
 
-        /* 노란색 원 커서 (배경색과 동일) */
+        /* 노란색 원 커서 (배경색과 동일, 테두리 없음) */
         .umbrella-cursor {
             position: fixed;
             width: 140px;
             height: 140px;
             border-radius: 50%;
             background: #f4f400;
-            box-shadow: 0 0 0 3px #000000;
             pointer-events: none;
             z-index: 9999;
             transition: none;
@@ -186,7 +190,7 @@
             <span class="legend-circle red"></span>PRESSURE
         </div>
         <div class="legend-item">
-            <span class="legend-circle" style="background: #f4f400; border: 2px solid #000;"></span>SHIELD
+            <span class="legend-circle" style="background: #f4f400; border: 2px solid #f4f400;"></span>SHIELD
         </div>
     </div>
 
@@ -308,8 +312,18 @@
                         if (i === segment.start) {
                             ctx.moveTo(point.x, point.y);
                         } else {
-                            ctx.lineTo(point.x, point.y);
+                            // 부드러운 곡선으로 연결
+                            const prevPoint = this.displayPoints[i - 1];
+                            const midX = (prevPoint.x + point.x) / 2;
+                            const midY = (prevPoint.y + point.y) / 2;
+                            ctx.quadraticCurveTo(prevPoint.x, prevPoint.y, midX, midY);
                         }
+                    }
+                    
+                    // 마지막 점까지 부드럽게 연결
+                    if (segment.end < this.displayPoints.length - 1) {
+                        const lastPoint = this.displayPoints[segment.end];
+                        ctx.lineTo(lastPoint.x, lastPoint.y);
                     }
                     
                     ctx.stroke();
