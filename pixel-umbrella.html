@@ -258,6 +258,12 @@
                 this.wobbleSpeed = 0.5 + Math.random() * 0.5;
                 this.wobbleAmount = 0.3 + Math.random() * 0.5;
                 
+                // 불규칙한 비 내리는 움직임
+                this.rainSpeed = 0.05 + Math.random() * 0.15; // 느린 속도
+                this.rainPhase = Math.random() * 1000;
+                this.rainAmplitudeX = (Math.random() - 0.5) * 0.8; // 좌우 흔들림
+                this.rainOffset = 0;
+                
                 // 밀려나는 효과
                 this.pushX = 0;
                 this.pushY = 0;
@@ -279,13 +285,26 @@
                     }
                 }
                 
-                // 미세한 떨림 (비 느낌)
+                // 미세한 떨림
                 const wobbleX = Math.sin(time * this.wobbleSpeed + this.wobblePhase) * this.wobbleAmount;
                 const wobbleY = Math.cos(time * this.wobbleSpeed * 0.7 + this.wobblePhase) * this.wobbleAmount;
                 
+                // 불규칙한 비 내리는 움직임
+                this.rainOffset += this.rainSpeed;
+                const rainX = Math.sin(this.rainOffset + this.rainPhase) * this.rainAmplitudeX;
+                const rainY = this.rainOffset;
+                
+                // 화면 밖으로 나가면 리셋
+                if (this.originalY + rainY > height + this.height) {
+                    this.rainOffset = -(Math.random() * 200); // 랜덤 시작 위치
+                }
+                
                 // 마우스와의 거리 계산
-                const dx = this.originalX - mouse.x;
-                const dy = this.originalY - mouse.y;
+                const currentX = this.originalX + wobbleX + rainX + this.pushX;
+                const currentY = this.originalY + wobbleY + rainY + this.pushY;
+                
+                const dx = currentX - mouse.x;
+                const dy = currentY - mouse.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
                 // 우산 영역 (더 큰 영역)
@@ -311,8 +330,8 @@
                 this.pushY *= (1 - this.pushDecay);
                 
                 // 최종 위치
-                this.x = this.originalX + wobbleX + this.pushX;
-                this.y = this.originalY + wobbleY + this.pushY;
+                this.x = currentX;
+                this.y = currentY;
             }
 
             draw() {
