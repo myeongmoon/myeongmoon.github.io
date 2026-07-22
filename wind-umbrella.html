@@ -264,12 +264,20 @@
                 this.displayPoints.forEach((point, i) => {
                     const original = this.allPoints[i];
                     
-                    // 유기적인 움직임
-                    const wobbleX = Math.sin(time * 0.5 + original.wobblePhase) * 2;
-                    const wobbleY = Math.cos(time * 0.3 + original.wobblePhase) * 3;
+                    // 역동적인 전체 움직임 (큰 물결)
+                    const bigWaveX = Math.sin(time * 0.8 + original.x * 0.002) * 8;
+                    const bigWaveY = Math.cos(time * 0.6 + original.y * 0.003) * 10;
                     
-                    let targetX = original.x + wobbleX;
-                    let targetY = original.y + wobbleY;
+                    // 중간 크기 물결
+                    const medWaveX = Math.sin(time * 1.2 + original.wobblePhase) * 4;
+                    const medWaveY = Math.cos(time * 0.9 + original.wobblePhase) * 5;
+                    
+                    // 작은 떨림
+                    const wobbleX = Math.sin(time * 2 + original.wobblePhase) * 1.5;
+                    const wobbleY = Math.cos(time * 1.8 + original.wobblePhase) * 2;
+                    
+                    let targetX = original.x + bigWaveX + medWaveX + wobbleX;
+                    let targetY = original.y + bigWaveY + medWaveY + wobbleY;
                     
                     // 마우스 영향 - 절대 들어가지 않음
                     const dx = targetX - mouse.x;
@@ -321,11 +329,18 @@
             }
 
             update(time) {
-                const wobbleX = Math.sin(time * 0.4 + this.wobblePhase) * 2;
-                const wobbleY = Math.cos(time * 0.35 + this.wobblePhase) * 2;
+                // 역동적인 전체 움직임
+                const bigWaveX = Math.sin(time * 0.8 + this.wobblePhase) * 6;
+                const bigWaveY = Math.cos(time * 0.6 + this.wobblePhase) * 8;
                 
-                let targetX = this.originalX + wobbleX;
-                let targetY = this.originalY + wobbleY;
+                const medWaveX = Math.sin(time * 1.2 + this.wobblePhase) * 3;
+                const medWaveY = Math.cos(time * 0.9 + this.wobblePhase) * 4;
+                
+                const wobbleX = Math.sin(time * 2 + this.wobblePhase) * 1.5;
+                const wobbleY = Math.cos(time * 1.8 + this.wobblePhase) * 2;
+                
+                let targetX = this.originalX + bigWaveX + medWaveX + wobbleX;
+                let targetY = this.originalY + bigWaveY + medWaveY + wobbleY;
                 
                 const dx = targetX - mouse.x;
                 const dy = targetY - mouse.y;
@@ -363,11 +378,18 @@
             }
 
             update(time) {
-                const wobbleX = Math.sin(time * 0.4 + this.wobblePhase) * 1.5;
-                const wobbleY = Math.cos(time * 0.3 + this.wobblePhase) * 1.5;
+                // 역동적인 전체 움직임
+                const bigWaveX = Math.sin(time * 0.8 + this.wobblePhase) * 5;
+                const bigWaveY = Math.cos(time * 0.6 + this.wobblePhase) * 7;
                 
-                let targetX = this.originalX + wobbleX;
-                let targetY = this.originalY + wobbleY;
+                const medWaveX = Math.sin(time * 1.2 + this.wobblePhase) * 2.5;
+                const medWaveY = Math.cos(time * 0.9 + this.wobblePhase) * 3.5;
+                
+                const wobbleX = Math.sin(time * 2 + this.wobblePhase) * 1;
+                const wobbleY = Math.cos(time * 1.8 + this.wobblePhase) * 1.5;
+                
+                let targetX = this.originalX + bigWaveX + medWaveX + wobbleX;
+                let targetY = this.originalY + bigWaveY + medWaveY + wobbleY;
                 
                 const dx = targetX - mouse.x;
                 const dy = targetY - mouse.y;
@@ -413,11 +435,18 @@
             }
 
             update(time) {
-                const wobbleX = Math.sin(time * 0.35 + this.wobblePhase) * 1;
-                const wobbleY = Math.cos(time * 0.25 + this.wobblePhase) * 1;
+                // 역동적인 전체 움직임
+                const bigWaveX = Math.sin(time * 0.8 + this.wobblePhase) * 4;
+                const bigWaveY = Math.cos(time * 0.6 + this.wobblePhase) * 6;
                 
-                let targetX = this.originalX + wobbleX;
-                let targetY = this.originalY + wobbleY;
+                const medWaveX = Math.sin(time * 1.2 + this.wobblePhase) * 2;
+                const medWaveY = Math.cos(time * 0.9 + this.wobblePhase) * 3;
+                
+                const wobbleX = Math.sin(time * 2 + this.wobblePhase) * 0.8;
+                const wobbleY = Math.cos(time * 1.8 + this.wobblePhase) * 1.2;
+                
+                let targetX = this.originalX + bigWaveX + medWaveX + wobbleX;
+                let targetY = this.originalY + bigWaveY + medWaveY + wobbleY;
                 
                 const dx = targetX - mouse.x;
                 const dy = targetY - mouse.y;
