@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wind Flow Umbrella</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #e8e632;
+            overflow: hidden;
+            font-family: 'Courier Prime', monospace;
+            cursor: none;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* 타이틀 */
+        .title {
+            position: fixed;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+            color: rgba(0, 0, 0, 0.15);
+            font-size: clamp(2rem, 6vw, 4rem);
+            font-weight: 700;
+            letter-spacing: 8px;
+        }
+
+        /* 네비게이션 */
+        .nav-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            padding: 15px 30px;
+            background: #000000;
+            color: #e8e632;
+            text-decoration: none;
+            border: 2px solid #000000;
+            transition: all 0.3s;
+            z-index: 1000;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .nav-btn:hover {
+            background: #e8e632;
+            color: #000000;
+        }
+
+        /* 파란 우산 커서 (탑뷰) */
+        .umbrella-cursor {
+            position: fixed;
+            width: 120px;
+            height: 120px;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease;
+        }
+
+        /* 인포 */
+        .info {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 0.9rem;
+            font-weight: 400;
+            letter-spacing: 3px;
+            z-index: 10;
+        }
+
+        /* 범례 */
+        .legend {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #e8e632;
+            padding: 20px 25px;
+            z-index: 100;
+            font-size: 0.85rem;
+            border: 2px solid #000000;
+        }
+
+        .legend-item {
+            margin: 10px 0;
+            letter-spacing: 2px;
+        }
+
+        .legend-circle {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .red { background: #d64545; }
+        .blue { background: #4a90e2; }
+
+        @media (max-width: 768px) {
+            .umbrella-cursor {
+                display: none;
+            }
+            body {
+                cursor: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="nav-btn">← HOME</a>
+
+    <!-- 파란 우산 커서 (탑뷰) -->
+    <div class="umbrella-cursor" id="umbrellaCursor">
+        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+            <!-- 우산 원형 (탑뷰) -->
+            <circle cx="60" cy="60" r="50" fill="#4a90e2" stroke="#2563eb" stroke-width="3"/>
+            
+            <!-- 우산 섹션 (8등분) -->
+            <g opacity="0.3">
+                <line x1="60" y1="10" x2="60" y2="110" stroke="#2563eb" stroke-width="2"/>
+                <line x1="10" y1="60" x2="110" y2="60" stroke="#2563eb" stroke-width="2"/>
+                <line x1="24" y1="24" x2="96" y2="96" stroke="#2563eb" stroke-width="2"/>
+                <line x1="96" y1="24" x2="24" y2="96" stroke="#2563eb" stroke-width="2"/>
+            </g>
+            
+            <!-- 중심 손잡이 -->
+            <circle cx="60" cy="60" r="8" fill="#2563eb" stroke="#1e40af" stroke-width="2"/>
+            
+            <!-- 외곽선 강조 -->
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#2563eb" stroke-width="3"/>
+        </svg>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="title">WIND FLOW</div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <span class="legend-circle red"></span>PRESSURE
+        </div>
+        <div class="legend-item">
+            <span class="legend-circle blue"></span>UMBRELLA
+        </div>
+    </div>
+
+    <div class="info">MOVE TO DEFLECT THE WIND</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const umbrellaCursor = document.getElementById('umbrellaCursor');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // 마우스
+        const mouse = {
+            x: width / 2,
+            y: height / 2,
+            radius: 80 // 우산 영향 반경
+        };
+
+        // 마우스 이벤트
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            
+            umbrellaCursor.style.left = (e.clientX - 60) + 'px';
+            umbrellaCursor.style.top = (e.clientY - 60) + 'px';
+        });
+
+        // 바람 흐름선 클래스
+        class WindLine {
+            constructor(startX, startY, angle, length, curvature) {
+                this.points = [];
+                this.originalPoints = [];
+                this.angle = angle;
+                this.length = length;
+                this.curvature = curvature;
+                this.segments = 30;
+                
+                // 원래 점들 생성
+                for (let i = 0; i <= this.segments; i++) {
+                    const t = i / this.segments;
+                    const x = startX + Math.cos(angle) * length * t;
+                    const y = startY + Math.sin(angle) * length * t + Math.sin(t * Math.PI * curvature) * 15;
+                    
+                    this.originalPoints.push({ x, y });
+                    this.points.push({ x, y });
+                }
+            }
+
+            update() {
+                // 각 점을 우산에서 밀어냄
+                this.points.forEach((point, i) => {
+                    const dx = point.x - mouse.x;
+                    const dy = point.y - mouse.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < mouse.radius) {
+                        // 우산에서 멀어지는 힘
+                        const force = (1 - distance / mouse.radius) * 30;
+                        const angle = Math.atan2(dy, dx);
+                        
+                        point.x = this.originalPoints[i].x + Math.cos(angle) * force;
+                        point.y = this.originalPoints[i].y + Math.sin(angle) * force;
+                    } else {
+                        // 원래 위치로 부드럽게 복귀
+                        point.x += (this.originalPoints[i].x - point.x) * 0.1;
+                        point.y += (this.originalPoints[i].y - point.y) * 0.1;
+                    }
+                });
+            }
+
+            draw() {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                
+                this.points.forEach((point, i) => {
+                    if (i === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                });
+                
+                ctx.stroke();
+                
+                // 화살표 (방향 표시)
+                const lastIdx = this.points.length - 1;
+                const arrowSize = 8;
+                const lastPoint = this.points[lastIdx];
+                const prevPoint = this.points[lastIdx - 1];
+                const angle = Math.atan2(lastPoint.y - prevPoint.y, lastPoint.x - prevPoint.x);
+                
+                ctx.beginPath();
+                ctx.moveTo(lastPoint.x, lastPoint.y);
+                ctx.lineTo(
+                    lastPoint.x - arrowSize * Math.cos(angle - Math.PI / 6),
+                    lastPoint.y - arrowSize * Math.sin(angle - Math.PI / 6)
+                );
+                ctx.moveTo(lastPoint.x, lastPoint.y);
+                ctx.lineTo(
+                    lastPoint.x - arrowSize * Math.cos(angle + Math.PI / 6),
+                    lastPoint.y - arrowSize * Math.sin(angle + Math.PI / 6)
+                );
+                ctx.stroke();
+            }
+        }
+
+        // 빨간 마커 클래스
+        class PressureMarker {
+            constructor(x, y, value) {
+                this.x = x;
+                this.y = y;
+                this.originalX = x;
+                this.originalY = y;
+                this.value = value;
+                this.radius = 15 + Math.random() * 10;
+            }
+
+            update() {
+                const dx = this.originalX - mouse.x;
+                const dy = this.originalY - mouse.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < mouse.radius * 1.2) {
+                    const force = (1 - distance / (mouse.radius * 1.2)) * 25;
+                    const angle = Math.atan2(dy, dx);
+                    
+                    this.x = this.originalX + Math.cos(angle) * force;
+                    this.y = this.originalY + Math.sin(angle) * force;
+                } else {
+                    this.x += (this.originalX - this.x) * 0.1;
+                    this.y += (this.originalY - this.y) * 0.1;
+                }
+            }
+
+            draw() {
+                // 빨간 원
+                ctx.fillStyle = '#d64545';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 테두리
+                ctx.strokeStyle = '#a03030';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // 숫자
+                ctx.fillStyle = '#000000';
+                ctx.font = 'bold 11px Courier Prime';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.value, this.x, this.y);
+            }
+        }
+
+        // 그리드 숫자 클래스
+        class GridNumber {
+            constructor(x, y, value) {
+                this.x = x;
+                this.y = y;
+                this.originalX = x;
+                this.originalY = y;
+                this.value = value;
+            }
+
+            update() {
+                const dx = this.originalX - mouse.x;
+                const dy = this.originalY - mouse.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < mouse.radius) {
+                    const force = (1 - distance / mouse.radius) * 20;
+                    const angle = Math.atan2(dy, dx);
+                    
+                    this.x = this.originalX + Math.cos(angle) * force;
+                    this.y = this.originalY + Math.sin(angle) * force;
+                } else {
+                    this.x += (this.originalX - this.x) * 0.12;
+                    this.y += (this.originalY - this.y) * 0.12;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+                ctx.font = '10px Courier Prime';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.value, this.x, this.y);
+            }
+        }
+
+        // 바람선 생성
+        const windLines = [];
+        const rows = 25;
+        const cols = 30;
+
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                const x = (col / cols) * width;
+                const y = (row / rows) * height;
+                
+                // 다양한 각도와 곡률
+                const angle = Math.PI * 0.1 + Math.sin(col * 0.3) * 0.4 + Math.cos(row * 0.2) * 0.3;
+                const length = 40 + Math.random() * 30;
+                const curvature = 1 + Math.random() * 2;
+                
+                if (Math.random() > 0.3) { // 70% 확률
+                    windLines.push(new WindLine(x, y, angle, length, curvature));
+                }
+            }
+        }
+
+        // 빨간 마커 생성 (랜덤 위치)
+        const pressureMarkers = [];
+        for (let i = 0; i < 20; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+            const value = Math.floor(Math.random() * 300);
+            pressureMarkers.push(new PressureMarker(x, y, value));
+        }
+
+        // 그리드 숫자 생성
+        const gridNumbers = [];
+        for (let i = 0; i < 150; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+            const value = Math.floor(Math.random() * 400);
+            gridNumbers.push(new GridNumber(x, y, value));
+        }
+
+        // 그리드 선
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.lineWidth = 0.5;
+            
+            const spacing = 50;
+            
+            // 세로선
+            for (let x = 0; x < width; x += spacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            
+            // 가로선
+            for (let y = 0; y < height; y += spacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+
+        // 애니메이션
+        function animate() {
+            // 배경
+            ctx.fillStyle = '#e8e632';
+            ctx.fillRect(0, 0, width, height);
+
+            // 그리드
+            drawGrid();
+
+            // 그리드 숫자 업데이트 및 그리기
+            gridNumbers.forEach(num => {
+                num.update();
+                num.draw();
+            });
+
+            // 바람선 업데이트 및 그리기
+            windLines.forEach(line => {
+                line.update();
+                line.draw();
+            });
+
+            // 빨간 마커 업데이트 및 그리기
+            pressureMarkers.forEach(marker => {
+                marker.update();
+                marker.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // 리사이즈
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // 시작
+        animate();
+
+        // 초기 커서 위치
+        umbrellaCursor.style.left = (width / 2 - 60) + 'px';
+        umbrellaCursor.style.top = (height / 2 - 60) + 'px';
+    </script>
+</body>
+</html>

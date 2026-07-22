@@ -239,6 +239,29 @@
             box-shadow: 0 5px 20px rgba(92, 76, 60, 0.5);
         }
 
+        .wind-btn {
+            position: fixed;
+            top: 320px;
+            left: 20px;
+            padding: 15px 30px;
+            background: rgba(232, 230, 50, 0.8);
+            color: #000000;
+            text-decoration: none;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 2px solid rgba(0, 0, 0, 0.3);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .wind-btn:hover {
+            background: rgba(232, 230, 50, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(232, 230, 50, 0.6);
+        }
+
         @media (max-width: 768px) {
             .title {
                 top: -60px;
@@ -260,6 +283,7 @@
     <a href="umbrella-shield.html" class="shield-btn">🛡️ Shield</a>
     <a href="noise-rain.html" class="noise-btn">◾ Noise</a>
     <a href="pixel-umbrella.html" class="pixel-btn">▬ Pixel</a>
+    <a href="wind-umbrella.html" class="wind-btn">🌪️ Wind</a>
     
     <div class="container">
         <div class="title">FACE OF GRADIENT</div>
