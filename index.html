@@ -169,6 +169,29 @@
             box-shadow: 0 5px 20px rgba(255, 255, 255, 0.3);
         }
 
+        .shield-btn {
+            position: fixed;
+            top: 140px;
+            left: 20px;
+            padding: 15px 30px;
+            background: rgba(74, 144, 226, 0.15);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 2px solid rgba(74, 144, 226, 0.4);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .shield-btn:hover {
+            background: rgba(74, 144, 226, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(74, 144, 226, 0.5);
+        }
+
         @media (max-width: 768px) {
             .title {
                 top: -60px;
@@ -187,6 +210,7 @@
 <body>
     <a href="gallery.html" class="gallery-btn">🎨 Gallery</a>
     <a href="umbrella.html" class="umbrella-btn">☂️ Umbrella</a>
+    <a href="umbrella-shield.html" class="shield-btn">🛡️ Shield</a>
     
     <div class="container">
         <div class="title">FACE OF GRADIENT</div>

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Umbrella That Shields Everything</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 50%, #16213e 100%);
+            overflow: hidden;
+            font-family: 'Space Grotesk', sans-serif;
+            cursor: none;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* 메인 타이틀 */
+        .hero-section {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+            width: 90%;
+            max-width: 1200px;
+        }
+
+        .main-title {
+            font-size: clamp(2.5rem, 8vw, 6rem);
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            margin-bottom: 30px;
+            text-shadow: 
+                0 0 20px rgba(74, 144, 226, 0.5),
+                0 0 40px rgba(74, 144, 226, 0.3),
+                0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: titleGlow 3s ease-in-out infinite;
+        }
+
+        .main-title .highlight {
+            color: #4a90e2;
+            display: block;
+            font-size: clamp(3rem, 10vw, 8rem);
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% {
+                text-shadow: 
+                    0 0 20px rgba(74, 144, 226, 0.5),
+                    0 0 40px rgba(74, 144, 226, 0.3),
+                    0 10px 30px rgba(0, 0, 0, 0.5);
+            }
+            50% {
+                text-shadow: 
+                    0 0 30px rgba(74, 144, 226, 0.8),
+                    0 0 60px rgba(74, 144, 226, 0.5),
+                    0 10px 30px rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+        }
+
+        /* 네비게이션 */
+        .nav-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            padding: 15px 30px;
+            background: rgba(74, 144, 226, 0.1);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 2px solid rgba(74, 144, 226, 0.3);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .nav-btn:hover {
+            background: rgba(74, 144, 226, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(74, 144, 226, 0.4);
+        }
+
+        /* 인포 텍스트 */
+        .info-text {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            z-index: 10;
+            animation: pulse 2s ease-in-out infinite;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        /* 3D 우산 커서 */
+        .umbrella-cursor {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            pointer-events: none;
+            z-index: 9999;
+            transition: transform 0.1s ease;
+            filter: drop-shadow(0 10px 20px rgba(74, 144, 226, 0.5));
+        }
+
+        /* 통계 패널 */
+        .stats {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 20px 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            z-index: 100;
+        }
+
+        .stats-item {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            margin: 8px 0;
+            font-weight: 300;
+        }
+
+        .stats-number {
+            color: #4a90e2;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                top: auto;
+                bottom: 100px;
+                right: 20px;
+                left: 20px;
+                padding: 15px 20px;
+            }
+            .umbrella-cursor {
+                display: none;
+            }
+            body {
+                cursor: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="nav-btn">← Home</a>
+
+    <!-- 3D 우산 커서 -->
+    <div class="umbrella-cursor" id="umbrellaCursor">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <!-- 우산 그림자 -->
+            <ellipse cx="50" cy="90" rx="25" ry="5" fill="rgba(0,0,0,0.2)" />
+            
+            <!-- 우산 손잡이 -->
+            <path d="M 50 45 L 50 85 Q 50 90 55 90 L 60 90" 
+                  stroke="#2563eb" stroke-width="3" fill="none" stroke-linecap="round"/>
+            
+            <!-- 우산 갓 (3D 효과) -->
+            <path d="M 15 45 Q 50 20 85 45" 
+                  fill="url(#umbrellaGradient)" stroke="#1e40af" stroke-width="2"/>
+            
+            <!-- 우산 하이라이트 -->
+            <path d="M 20 42 Q 50 25 80 42" 
+                  fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/>
+            
+            <!-- 우산 살 -->
+            <line x1="50" y1="25" x2="50" y2="45" stroke="#1e40af" stroke-width="2"/>
+            <line x1="50" y1="25" x2="25" y2="43" stroke="#1e40af" stroke-width="1.5"/>
+            <line x1="50" y1="25" x2="75" y2="43" stroke="#1e40af" stroke-width="1.5"/>
+            
+            <!-- 그라데이션 정의 -->
+            <defs>
+                <linearGradient id="umbrellaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#3b82f6;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+        </svg>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <!-- 메인 타이틀 -->
+    <div class="hero-section">
+        <h1 class="main-title">
+            THE UMBRELLA
+            <span class="highlight">THAT SHIELDS</span>
+            EVERYTHING
+        </h1>
+        <p class="subtitle">Protection • Safety • Peace</p>
+    </div>
+
+    <!-- 통계 -->
+    <div class="stats">
+        <div class="stats-item">
+            Blocked: <span class="stats-number" id="blockedCount">0</span>
+        </div>
+        <div class="stats-item">
+            Active: <span class="stats-number" id="activeCount">0</span>
+        </div>
+    </div>
+
+    <div class="info-text">
+        Move your mouse to shield against the pixel rain
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const umbrellaCursor = document.getElementById('umbrellaCursor');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // 통계
+        let blockedCount = 0;
+        let activeCount = 0;
+
+        // 마우스 위치
+        const mouse = {
+            x: width / 2,
+            y: height / 2,
+            vx: 0,
+            vy: 0,
+            angle: 0
+        };
+
+        // 커서 업데이트
+        let lastMouseX = mouse.x;
+        let lastMouseY = mouse.y;
+
+        document.addEventListener('mousemove', (e) => {
+            const dx = e.clientX - mouse.x;
+            const dy = e.clientY - mouse.y;
+            
+            mouse.vx = dx;
+            mouse.vy = dy;
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            
+            // 움직임에 따른 각도 계산
+            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                mouse.angle = Math.atan2(dy, dx);
+            }
+            
+            // 우산 커서 위치 업데이트
+            umbrellaCursor.style.left = (e.clientX - 50) + 'px';
+            umbrellaCursor.style.top = (e.clientY - 50) + 'px';
+            
+            // 움직임에 따른 기울기
+            const tiltX = Math.max(-15, Math.min(15, dx * 0.5));
+            const tiltY = Math.max(-15, Math.min(15, dy * 0.5));
+            umbrellaCursor.style.transform = `translate(0, 0) rotateX(${tiltY}deg) rotateY(${-tiltX}deg)`;
+            
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        });
+
+        // QR 픽셀 클래스
+        class QRPixel {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * height * -1; // 위에서 시작
+            }
+
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * -500 - 50;
+                this.size = Math.random() < 0.7 ? 4 : (Math.random() < 0.5 ? 8 : 12); // QR코드 느낌
+                this.speed = 3 + Math.random() * 5;
+                this.opacity = 0.8 + Math.random() * 0.2;
+                this.blocked = false;
+                this.bounceVx = 0;
+                this.bounceVy = 0;
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.3;
+                this.glitchOffset = 0;
+                this.fadeOut = 1;
+            }
+
+            update(time) {
+                if (!this.blocked) {
+                    this.y += this.speed;
+                    
+                    // 약간의 흔들림
+                    this.glitchOffset = Math.sin(time * 5 + this.y) * 2;
+                    
+                    // 우산과의 충돌 체크
+                    const dx = this.x - mouse.x;
+                    const dy = this.y - mouse.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // 우산의 보호 영역 (반구 형태)
+                    const umbrellaRadius = 80;
+                    const isUnderUmbrella = distance < umbrellaRadius && dy < 10 && dy > -20;
+                    
+                    if (isUnderUmbrella) {
+                        this.blocked = true;
+                        blockedCount++;
+                        
+                        // 튕겨나가는 각도와 속도
+                        const angle = Math.atan2(dy, dx);
+                        const force = 3 + Math.random() * 3;
+                        this.bounceVx = Math.cos(angle) * force;
+                        this.bounceVy = Math.sin(angle) * force - 2;
+                    }
+                    
+                    // 화면 밖으로 나가면 리셋
+                    if (this.y > height + 50) {
+                        this.reset();
+                    }
+                } else {
+                    // 튕겨나간 후
+                    this.x += this.bounceVx;
+                    this.y += this.bounceVy;
+                    this.bounceVy += 0.15; // 중력
+                    this.rotation += this.rotationSpeed;
+                    this.fadeOut -= 0.015;
+                    
+                    // 완전히 사라지면 리셋
+                    if (this.fadeOut <= 0 || this.y > height + 100) {
+                        this.reset();
+                    }
+                }
+            }
+
+            draw() {
+                if (this.fadeOut <= 0) return;
+                
+                ctx.save();
+                ctx.globalAlpha = this.opacity * this.fadeOut;
+                ctx.translate(this.x + this.glitchOffset, this.y);
+                ctx.rotate(this.rotation);
+                
+                // QR 코드 스타일의 사각형
+                if (this.blocked) {
+                    // 튕겨나갈 때 파란색으로
+                    ctx.fillStyle = '#4a90e2';
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = '#4a90e2';
+                } else {
+                    ctx.fillStyle = '#000000';
+                }
+                
+                ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                
+                // 약간의 테두리
+                if (!this.blocked) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                }
+                
+                ctx.restore();
+            }
+        }
+
+        // 배경 그리드
+        class BackgroundGrid {
+            constructor() {
+                this.dots = [];
+                const spacing = 50;
+                for (let x = 0; x < width; x += spacing) {
+                    for (let y = 0; y < height; y += spacing) {
+                        this.dots.push({
+                            x: x,
+                            y: y,
+                            originalX: x,
+                            originalY: y,
+                            size: 1,
+                            opacity: 0.1
+                        });
+                    }
+                }
+            }
+
+            update() {
+                this.dots.forEach(dot => {
+                    const dx = dot.originalX - mouse.x;
+                    const dy = dot.originalY - mouse.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 120) {
+                        const force = (1 - distance / 120) * 15;
+                        dot.x = dot.originalX + (dx / distance) * force;
+                        dot.y = dot.originalY + (dy / distance) * force;
+                        dot.opacity = 0.3;
+                    } else {
+                        dot.x += (dot.originalX - dot.x) * 0.1;
+                        dot.y += (dot.originalY - dot.y) * 0.1;
+                        dot.opacity += (0.1 - dot.opacity) * 0.1;
+                    }
+                });
+            }
+
+            draw() {
+                this.dots.forEach(dot => {
+                    ctx.beginPath();
+                    ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(74, 144, 226, ${dot.opacity})`;
+                    ctx.fill();
+                });
+            }
+        }
+
+        // 우산 보호 영역 시각화
+        function drawUmbrellaShield() {
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            
+            // 그라데이션 실드
+            const gradient = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 80);
+            gradient.addColorStop(0, 'rgba(74, 144, 226, 0.3)');
+            gradient.addColorStop(0.5, 'rgba(74, 144, 226, 0.1)');
+            gradient.addColorStop(1, 'rgba(74, 144, 226, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(mouse.x, mouse.y - 10, 80, Math.PI, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // 초기화
+        const pixels = Array.from({ length: 300 }, () => new QRPixel());
+        const backgroundGrid = new BackgroundGrid();
+
+        let time = 0;
+
+        // 애니메이션 루프
+        function animate() {
+            time += 0.02;
+
+            // 배경 클리어
+            ctx.fillStyle = 'rgba(15, 15, 30, 0.15)';
+            ctx.fillRect(0, 0, width, height);
+
+            // 배경 그리드
+            backgroundGrid.update();
+            backgroundGrid.draw();
+
+            // 우산 보호 영역
+            drawUmbrellaShield();
+
+            // 활성 픽셀 카운트
+            activeCount = pixels.filter(p => !p.blocked && p.y > 0 && p.y < height).length;
+
+            // 픽셀 업데이트 및 그리기
+            pixels.forEach(pixel => {
+                pixel.update(time);
+                pixel.draw();
+            });
+
+            // 통계 업데이트
+            document.getElementById('blockedCount').textContent = blockedCount;
+            document.getElementById('activeCount').textContent = activeCount;
+
+            requestAnimationFrame(animate);
+        }
+
+        // 리사이즈
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // 시작
+        animate();
+    </script>
+</body>
+</html>
