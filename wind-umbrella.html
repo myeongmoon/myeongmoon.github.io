@@ -64,14 +64,19 @@
             color: #000000;
         }
 
-        /* 파란 우산 커서 (탑뷰) */
+        /* 흰색 원 커서 */
         .umbrella-cursor {
             position: fixed;
             width: 120px;
             height: 120px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            border: 3px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
             pointer-events: none;
             z-index: 9999;
             transition: transform 0.1s ease;
+            transform: translate(-50%, -50%);
         }
 
         /* 인포 */
@@ -130,27 +135,8 @@
 <body>
     <a href="index.html" class="nav-btn">← HOME</a>
 
-    <!-- 파란 우산 커서 (탑뷰) -->
-    <div class="umbrella-cursor" id="umbrellaCursor">
-        <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
-            <!-- 우산 원형 (탑뷰) -->
-            <circle cx="60" cy="60" r="50" fill="#4a90e2" stroke="#2563eb" stroke-width="3"/>
-            
-            <!-- 우산 섹션 (8등분) -->
-            <g opacity="0.3">
-                <line x1="60" y1="10" x2="60" y2="110" stroke="#2563eb" stroke-width="2"/>
-                <line x1="10" y1="60" x2="110" y2="60" stroke="#2563eb" stroke-width="2"/>
-                <line x1="24" y1="24" x2="96" y2="96" stroke="#2563eb" stroke-width="2"/>
-                <line x1="96" y1="24" x2="24" y2="96" stroke="#2563eb" stroke-width="2"/>
-            </g>
-            
-            <!-- 중심 손잡이 -->
-            <circle cx="60" cy="60" r="8" fill="#2563eb" stroke="#1e40af" stroke-width="2"/>
-            
-            <!-- 외곽선 강조 -->
-            <circle cx="60" cy="60" r="50" fill="none" stroke="#2563eb" stroke-width="3"/>
-        </svg>
-    </div>
+    <!-- 흰색 원 커서 -->
+    <div class="umbrella-cursor" id="umbrellaCursor"></div>
 
     <canvas id="canvas"></canvas>
 
@@ -161,7 +147,7 @@
             <span class="legend-circle red"></span>PRESSURE
         </div>
         <div class="legend-item">
-            <span class="legend-circle blue"></span>UMBRELLA
+            <span class="legend-circle" style="background: white;"></span>SHIELD
         </div>
     </div>
 
@@ -179,7 +165,7 @@
         const mouse = {
             x: width / 2,
             y: height / 2,
-            radius: 80 // 우산 영향 반경
+            radius: 60
         };
 
         // 마우스 이벤트
@@ -187,50 +173,66 @@
             mouse.x = e.clientX;
             mouse.y = e.clientY;
             
-            umbrellaCursor.style.left = (e.clientX - 60) + 'px';
-            umbrellaCursor.style.top = (e.clientY - 60) + 'px';
+            umbrellaCursor.style.left = e.clientX + 'px';
+            umbrellaCursor.style.top = e.clientY + 'px';
         });
 
-        // 바람 흐름선 클래스
-        class WindLine {
-            constructor(startX, startY, angle, length, curvature) {
+        // 등고선 형태의 긴 바람선 클래스
+        class ContourLine {
+            constructor(startY, baseAngle) {
                 this.points = [];
                 this.originalPoints = [];
-                this.angle = angle;
-                this.length = length;
-                this.curvature = curvature;
-                this.segments = 30;
+                this.baseAngle = baseAngle;
+                this.startY = startY;
                 
-                // 원래 점들 생성
-                for (let i = 0; i <= this.segments; i++) {
-                    const t = i / this.segments;
-                    const x = startX + Math.cos(angle) * length * t;
-                    const y = startY + Math.sin(angle) * length * t + Math.sin(t * Math.PI * curvature) * 15;
+                // 긴 등고선 생성 (화면 가로를 가로지름)
+                const segments = 80;
+                const segmentLength = width / segments;
+                
+                for (let i = 0; i <= segments; i++) {
+                    const x = i * segmentLength;
                     
-                    this.originalPoints.push({ x, y });
+                    // 큰 맥락의 굴곡 (느린 사인파)
+                    const bigWave = Math.sin(x * 0.003) * 80;
+                    const mediumWave = Math.sin(x * 0.008) * 30;
+                    const y = startY + bigWave + mediumWave;
+                    
+                    this.originalPoints.push({ 
+                        x, 
+                        y,
+                        wobblePhase: Math.random() * Math.PI * 2
+                    });
                     this.points.push({ x, y });
                 }
             }
 
-            update() {
-                // 각 점을 우산에서 밀어냄
+            update(time) {
                 this.points.forEach((point, i) => {
-                    const dx = point.x - mouse.x;
-                    const dy = point.y - mouse.y;
+                    const original = this.originalPoints[i];
+                    
+                    // 유기적인 움직임 (기본)
+                    const wobbleX = Math.sin(time * 0.5 + original.wobblePhase) * 2;
+                    const wobbleY = Math.cos(time * 0.3 + original.wobblePhase) * 3;
+                    
+                    let targetX = original.x + wobbleX;
+                    let targetY = original.y + wobbleY;
+                    
+                    // 마우스(흰 원)의 영향
+                    const dx = targetX - mouse.x;
+                    const dy = targetY - mouse.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
-                    if (distance < mouse.radius) {
-                        // 우산에서 멀어지는 힘
-                        const force = (1 - distance / mouse.radius) * 30;
+                    if (distance < mouse.radius * 2) {
+                        const force = (1 - distance / (mouse.radius * 2)) * 40;
                         const angle = Math.atan2(dy, dx);
                         
-                        point.x = this.originalPoints[i].x + Math.cos(angle) * force;
-                        point.y = this.originalPoints[i].y + Math.sin(angle) * force;
-                    } else {
-                        // 원래 위치로 부드럽게 복귀
-                        point.x += (this.originalPoints[i].x - point.x) * 0.1;
-                        point.y += (this.originalPoints[i].y - point.y) * 0.1;
+                        targetX += Math.cos(angle) * force;
+                        targetY += Math.sin(angle) * force;
                     }
+                    
+                    // 부드럽게 이동
+                    point.x += (targetX - point.x) * 0.15;
+                    point.y += (targetY - point.y) * 0.15;
                 });
             }
 
@@ -239,34 +241,20 @@
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 
-                this.points.forEach((point, i) => {
+                // 부드러운 곡선 그리기
+                for (let i = 0; i < this.points.length; i++) {
+                    const point = this.points[i];
+                    
                     if (i === 0) {
                         ctx.moveTo(point.x, point.y);
                     } else {
-                        ctx.lineTo(point.x, point.y);
+                        const prevPoint = this.points[i - 1];
+                        const midX = (prevPoint.x + point.x) / 2;
+                        const midY = (prevPoint.y + point.y) / 2;
+                        ctx.quadraticCurveTo(prevPoint.x, prevPoint.y, midX, midY);
                     }
-                });
+                }
                 
-                ctx.stroke();
-                
-                // 화살표 (방향 표시)
-                const lastIdx = this.points.length - 1;
-                const arrowSize = 8;
-                const lastPoint = this.points[lastIdx];
-                const prevPoint = this.points[lastIdx - 1];
-                const angle = Math.atan2(lastPoint.y - prevPoint.y, lastPoint.x - prevPoint.x);
-                
-                ctx.beginPath();
-                ctx.moveTo(lastPoint.x, lastPoint.y);
-                ctx.lineTo(
-                    lastPoint.x - arrowSize * Math.cos(angle - Math.PI / 6),
-                    lastPoint.y - arrowSize * Math.sin(angle - Math.PI / 6)
-                );
-                ctx.moveTo(lastPoint.x, lastPoint.y);
-                ctx.lineTo(
-                    lastPoint.x - arrowSize * Math.cos(angle + Math.PI / 6),
-                    lastPoint.y - arrowSize * Math.sin(angle + Math.PI / 6)
-                );
                 ctx.stroke();
             }
         }
@@ -280,38 +268,44 @@
                 this.originalY = y;
                 this.value = value;
                 this.radius = 15 + Math.random() * 10;
+                this.wobblePhase = Math.random() * Math.PI * 2;
             }
 
-            update() {
-                const dx = this.originalX - mouse.x;
-                const dy = this.originalY - mouse.y;
+            update(time) {
+                // 기본 유기적 움직임
+                const wobbleX = Math.sin(time * 0.4 + this.wobblePhase) * 1.5;
+                const wobbleY = Math.cos(time * 0.3 + this.wobblePhase) * 1.5;
+                
+                let targetX = this.originalX + wobbleX;
+                let targetY = this.originalY + wobbleY;
+                
+                // 마우스 영향
+                const dx = targetX - mouse.x;
+                const dy = targetY - mouse.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (distance < mouse.radius * 1.2) {
-                    const force = (1 - distance / (mouse.radius * 1.2)) * 25;
+                if (distance < mouse.radius * 1.5) {
+                    const force = (1 - distance / (mouse.radius * 1.5)) * 30;
                     const angle = Math.atan2(dy, dx);
                     
-                    this.x = this.originalX + Math.cos(angle) * force;
-                    this.y = this.originalY + Math.sin(angle) * force;
-                } else {
-                    this.x += (this.originalX - this.x) * 0.1;
-                    this.y += (this.originalY - this.y) * 0.1;
+                    targetX += Math.cos(angle) * force;
+                    targetY += Math.sin(angle) * force;
                 }
+                
+                this.x += (targetX - this.x) * 0.15;
+                this.y += (targetY - this.y) * 0.15;
             }
 
             draw() {
-                // 빨간 원
                 ctx.fillStyle = '#d64545';
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // 테두리
                 ctx.strokeStyle = '#a03030';
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 
-                // 숫자
                 ctx.fillStyle = '#000000';
                 ctx.font = 'bold 11px Courier Prime';
                 ctx.textAlign = 'center';
@@ -328,23 +322,32 @@
                 this.originalX = x;
                 this.originalY = y;
                 this.value = value;
+                this.wobblePhase = Math.random() * Math.PI * 2;
             }
 
-            update() {
-                const dx = this.originalX - mouse.x;
-                const dy = this.originalY - mouse.y;
+            update(time) {
+                // 기본 유기적 움직임
+                const wobbleX = Math.sin(time * 0.35 + this.wobblePhase) * 1;
+                const wobbleY = Math.cos(time * 0.25 + this.wobblePhase) * 1;
+                
+                let targetX = this.originalX + wobbleX;
+                let targetY = this.originalY + wobbleY;
+                
+                // 마우스 영향
+                const dx = targetX - mouse.x;
+                const dy = targetY - mouse.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
                 if (distance < mouse.radius) {
-                    const force = (1 - distance / mouse.radius) * 20;
+                    const force = (1 - distance / mouse.radius) * 25;
                     const angle = Math.atan2(dy, dx);
                     
-                    this.x = this.originalX + Math.cos(angle) * force;
-                    this.y = this.originalY + Math.sin(angle) * force;
-                } else {
-                    this.x += (this.originalX - this.x) * 0.12;
-                    this.y += (this.originalY - this.y) * 0.12;
+                    targetX += Math.cos(angle) * force;
+                    targetY += Math.sin(angle) * force;
                 }
+                
+                this.x += (targetX - this.x) * 0.15;
+                this.y += (targetY - this.y) * 0.15;
             }
 
             draw() {
@@ -355,25 +358,15 @@
             }
         }
 
-        // 바람선 생성
-        const windLines = [];
-        const rows = 25;
-        const cols = 30;
+        // 등고선 생성 (긴 바람선)
+        const contourLines = [];
+        const lineSpacing = 40;
+        const numLines = Math.ceil(height / lineSpacing) + 10;
 
-        for (let row = 0; row < rows; row++) {
-            for (let col = 0; col < cols; col++) {
-                const x = (col / cols) * width;
-                const y = (row / rows) * height;
-                
-                // 다양한 각도와 곡률
-                const angle = Math.PI * 0.1 + Math.sin(col * 0.3) * 0.4 + Math.cos(row * 0.2) * 0.3;
-                const length = 40 + Math.random() * 30;
-                const curvature = 1 + Math.random() * 2;
-                
-                if (Math.random() > 0.3) { // 70% 확률
-                    windLines.push(new WindLine(x, y, angle, length, curvature));
-                }
-            }
+        for (let i = 0; i < numLines; i++) {
+            const y = i * lineSpacing - 200;
+            const baseAngle = Math.PI * 0.1; // 기본 각도
+            contourLines.push(new ContourLine(y, baseAngle));
         }
 
         // 빨간 마커 생성 (랜덤 위치)
@@ -419,7 +412,11 @@
         }
 
         // 애니메이션
+        let time = 0;
+        
         function animate() {
+            time += 0.02;
+            
             // 배경
             ctx.fillStyle = '#e8e632';
             ctx.fillRect(0, 0, width, height);
@@ -429,19 +426,19 @@
 
             // 그리드 숫자 업데이트 및 그리기
             gridNumbers.forEach(num => {
-                num.update();
+                num.update(time);
                 num.draw();
             });
 
-            // 바람선 업데이트 및 그리기
-            windLines.forEach(line => {
-                line.update();
+            // 등고선 업데이트 및 그리기
+            contourLines.forEach(line => {
+                line.update(time);
                 line.draw();
             });
 
             // 빨간 마커 업데이트 및 그리기
             pressureMarkers.forEach(marker => {
-                marker.update();
+                marker.update(time);
                 marker.draw();
             });
 
@@ -458,8 +455,8 @@
         animate();
 
         // 초기 커서 위치
-        umbrellaCursor.style.left = (width / 2 - 60) + 'px';
-        umbrellaCursor.style.top = (height / 2 - 60) + 'px';
+        umbrellaCursor.style.left = (width / 2) + 'px';
+        umbrellaCursor.style.top = (height / 2) + 'px';
     </script>
 </body>
 </html>
