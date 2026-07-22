@@ -14,7 +14,7 @@
         }
 
         body {
-            background: #e8e632;
+            background: #f4f400;
             overflow: hidden;
             font-family: 'Courier Prime', monospace;
             cursor: none;
@@ -25,6 +25,41 @@
             position: absolute;
             top: 0;
             left: 0;
+        }
+
+        /* 프레임 테두리 */
+        .frame {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .frame-top {
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            border-top: 3px solid #000000;
+        }
+
+        .frame-bottom {
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            border-bottom: 3px solid #000000;
+        }
+
+        .frame-left {
+            top: 20px;
+            bottom: 20px;
+            left: 20px;
+            border-left: 3px solid #000000;
+        }
+
+        .frame-right {
+            top: 20px;
+            bottom: 20px;
+            right: 20px;
+            border-right: 3px solid #000000;
         }
 
         /* 타이틀 */
@@ -49,7 +84,7 @@
             left: 30px;
             padding: 15px 30px;
             background: #000000;
-            color: #e8e632;
+            color: #f4f400;
             text-decoration: none;
             border: 2px solid #000000;
             transition: all 0.3s;
@@ -60,22 +95,21 @@
         }
 
         .nav-btn:hover {
-            background: #e8e632;
+            background: #f4f400;
             color: #000000;
         }
 
-        /* 흰색 원 커서 */
+        /* 노란색 원 커서 (배경색과 동일) */
         .umbrella-cursor {
             position: fixed;
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.9);
-            border: 3px solid rgba(255, 255, 255, 1);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            background: #f4f400;
+            box-shadow: 0 0 0 3px #000000;
             pointer-events: none;
             z-index: 9999;
-            transition: transform 0.1s ease;
+            transition: none;
             transform: translate(-50%, -50%);
         }
 
@@ -98,7 +132,7 @@
             top: 30px;
             right: 30px;
             background: rgba(0, 0, 0, 0.85);
-            color: #e8e632;
+            color: #f4f400;
             padding: 20px 25px;
             z-index: 100;
             font-size: 0.85rem;
@@ -119,8 +153,7 @@
             vertical-align: middle;
         }
 
-        .red { background: #d64545; }
-        .blue { background: #4a90e2; }
+        .red { background: #ff3030; }
 
         @media (max-width: 768px) {
             .umbrella-cursor {
@@ -135,7 +168,13 @@
 <body>
     <a href="index.html" class="nav-btn">← HOME</a>
 
-    <!-- 흰색 원 커서 -->
+    <!-- 프레임 테두리 -->
+    <div class="frame frame-top"></div>
+    <div class="frame frame-bottom"></div>
+    <div class="frame frame-left"></div>
+    <div class="frame frame-right"></div>
+
+    <!-- 노란색 원 커서 -->
     <div class="umbrella-cursor" id="umbrellaCursor"></div>
 
     <canvas id="canvas"></canvas>
@@ -147,7 +186,7 @@
             <span class="legend-circle red"></span>PRESSURE
         </div>
         <div class="legend-item">
-            <span class="legend-circle" style="background: white;"></span>SHIELD
+            <span class="legend-circle" style="background: #f4f400; border: 2px solid #000;"></span>SHIELD
         </div>
     </div>
 
@@ -165,7 +204,7 @@
         const mouse = {
             x: width / 2,
             y: height / 2,
-            radius: 60
+            radius: 70
         };
 
         // 마우스 이벤트
@@ -179,82 +218,134 @@
 
         // 등고선 형태의 긴 바람선 클래스
         class ContourLine {
-            constructor(startY, baseAngle) {
+            constructor(startY) {
                 this.points = [];
                 this.originalPoints = [];
-                this.baseAngle = baseAngle;
                 this.startY = startY;
+                this.segments = [];
                 
-                // 긴 등고선 생성 (화면 가로를 가로지름)
-                const segments = 80;
-                const segmentLength = width / segments;
+                // 긴 등고선 생성
+                const totalPoints = 100;
+                const pointSpacing = width / totalPoints;
                 
-                for (let i = 0; i <= segments; i++) {
-                    const x = i * segmentLength;
+                let allPoints = [];
+                for (let i = 0; i <= totalPoints; i++) {
+                    const x = i * pointSpacing;
                     
-                    // 큰 맥락의 굴곡 (느린 사인파)
+                    // 큰 맥락의 굴곡
                     const bigWave = Math.sin(x * 0.003) * 80;
                     const mediumWave = Math.sin(x * 0.008) * 30;
                     const y = startY + bigWave + mediumWave;
                     
-                    this.originalPoints.push({ 
+                    allPoints.push({ 
                         x, 
                         y,
                         wobblePhase: Math.random() * Math.PI * 2
                     });
-                    this.points.push({ x, y });
                 }
+                
+                // 랜덤하게 끊어진 세그먼트 생성
+                let segmentStart = 0;
+                for (let i = 0; i < allPoints.length; i++) {
+                    if (Math.random() < 0.08 && i - segmentStart > 10) { // 끊김
+                        this.segments.push({ start: segmentStart, end: i });
+                        segmentStart = i + Math.floor(Math.random() * 8) + 3;
+                    }
+                }
+                if (segmentStart < allPoints.length - 1) {
+                    this.segments.push({ start: segmentStart, end: allPoints.length - 1 });
+                }
+                
+                this.allPoints = allPoints;
+                this.displayPoints = JSON.parse(JSON.stringify(allPoints));
             }
 
             update(time) {
-                this.points.forEach((point, i) => {
-                    const original = this.originalPoints[i];
+                this.displayPoints.forEach((point, i) => {
+                    const original = this.allPoints[i];
                     
-                    // 유기적인 움직임 (기본)
+                    // 유기적인 움직임
                     const wobbleX = Math.sin(time * 0.5 + original.wobblePhase) * 2;
                     const wobbleY = Math.cos(time * 0.3 + original.wobblePhase) * 3;
                     
                     let targetX = original.x + wobbleX;
                     let targetY = original.y + wobbleY;
                     
-                    // 마우스(흰 원)의 영향
+                    // 마우스 영향 - 절대 들어가지 않음
                     const dx = targetX - mouse.x;
                     const dy = targetY - mouse.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
-                    if (distance < mouse.radius * 2) {
-                        const force = (1 - distance / (mouse.radius * 2)) * 40;
+                    if (distance < mouse.radius) {
                         const angle = Math.atan2(dy, dx);
-                        
-                        targetX += Math.cos(angle) * force;
-                        targetY += Math.sin(angle) * force;
+                        targetX = mouse.x + Math.cos(angle) * (mouse.radius + 5);
+                        targetY = mouse.y + Math.sin(angle) * (mouse.radius + 5);
                     }
                     
-                    // 부드럽게 이동
-                    point.x += (targetX - point.x) * 0.15;
-                    point.y += (targetY - point.y) * 0.15;
+                    point.x += (targetX - point.x) * 0.2;
+                    point.y += (targetY - point.y) * 0.2;
                 });
             }
 
             draw() {
                 ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
+                ctx.lineWidth = 1.8;
                 
-                // 부드러운 곡선 그리기
-                for (let i = 0; i < this.points.length; i++) {
-                    const point = this.points[i];
+                this.segments.forEach(segment => {
+                    ctx.beginPath();
                     
-                    if (i === 0) {
-                        ctx.moveTo(point.x, point.y);
-                    } else {
-                        const prevPoint = this.points[i - 1];
-                        const midX = (prevPoint.x + point.x) / 2;
-                        const midY = (prevPoint.y + point.y) / 2;
-                        ctx.quadraticCurveTo(prevPoint.x, prevPoint.y, midX, midY);
+                    for (let i = segment.start; i <= segment.end; i++) {
+                        const point = this.displayPoints[i];
+                        
+                        if (i === segment.start) {
+                            ctx.moveTo(point.x, point.y);
+                        } else {
+                            ctx.lineTo(point.x, point.y);
+                        }
                     }
+                    
+                    ctx.stroke();
+                });
+            }
+        }
+
+        // 동그라미 장식 클래스
+        class CircleDecoration {
+            constructor(x, y, radius) {
+                this.x = x;
+                this.y = y;
+                this.originalX = x;
+                this.originalY = y;
+                this.radius = radius;
+                this.wobblePhase = Math.random() * Math.PI * 2;
+            }
+
+            update(time) {
+                const wobbleX = Math.sin(time * 0.4 + this.wobblePhase) * 2;
+                const wobbleY = Math.cos(time * 0.35 + this.wobblePhase) * 2;
+                
+                let targetX = this.originalX + wobbleX;
+                let targetY = this.originalY + wobbleY;
+                
+                const dx = targetX - mouse.x;
+                const dy = targetY - mouse.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < mouse.radius + this.radius) {
+                    const angle = Math.atan2(dy, dx);
+                    targetX = mouse.x + Math.cos(angle) * (mouse.radius + this.radius + 5);
+                    targetY = mouse.y + Math.sin(angle) * (mouse.radius + this.radius + 5);
                 }
                 
+                this.x += (targetX - this.x) * 0.2;
+                this.y += (targetY - this.y) * 0.2;
+            }
+
+            draw() {
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.stroke();
             }
         }
@@ -267,47 +358,43 @@
                 this.originalX = x;
                 this.originalY = y;
                 this.value = value;
-                this.radius = 15 + Math.random() * 10;
+                this.radius = 12 + Math.random() * 8;
                 this.wobblePhase = Math.random() * Math.PI * 2;
             }
 
             update(time) {
-                // 기본 유기적 움직임
                 const wobbleX = Math.sin(time * 0.4 + this.wobblePhase) * 1.5;
                 const wobbleY = Math.cos(time * 0.3 + this.wobblePhase) * 1.5;
                 
                 let targetX = this.originalX + wobbleX;
                 let targetY = this.originalY + wobbleY;
                 
-                // 마우스 영향
                 const dx = targetX - mouse.x;
                 const dy = targetY - mouse.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                if (distance < mouse.radius * 1.5) {
-                    const force = (1 - distance / (mouse.radius * 1.5)) * 30;
+                if (distance < mouse.radius + this.radius) {
                     const angle = Math.atan2(dy, dx);
-                    
-                    targetX += Math.cos(angle) * force;
-                    targetY += Math.sin(angle) * force;
+                    targetX = mouse.x + Math.cos(angle) * (mouse.radius + this.radius + 5);
+                    targetY = mouse.y + Math.sin(angle) * (mouse.radius + this.radius + 5);
                 }
                 
-                this.x += (targetX - this.x) * 0.15;
-                this.y += (targetY - this.y) * 0.15;
+                this.x += (targetX - this.x) * 0.2;
+                this.y += (targetY - this.y) * 0.2;
             }
 
             draw() {
-                ctx.fillStyle = '#d64545';
+                ctx.fillStyle = '#ff3030';
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fill();
                 
-                ctx.strokeStyle = '#a03030';
+                ctx.strokeStyle = '#cc0000';
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 
                 ctx.fillStyle = '#000000';
-                ctx.font = 'bold 11px Courier Prime';
+                ctx.font = 'bold 10px Courier Prime';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(this.value, this.x, this.y);
@@ -326,28 +413,24 @@
             }
 
             update(time) {
-                // 기본 유기적 움직임
                 const wobbleX = Math.sin(time * 0.35 + this.wobblePhase) * 1;
                 const wobbleY = Math.cos(time * 0.25 + this.wobblePhase) * 1;
                 
                 let targetX = this.originalX + wobbleX;
                 let targetY = this.originalY + wobbleY;
                 
-                // 마우스 영향
                 const dx = targetX - mouse.x;
                 const dy = targetY - mouse.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
                 if (distance < mouse.radius) {
-                    const force = (1 - distance / mouse.radius) * 25;
                     const angle = Math.atan2(dy, dx);
-                    
-                    targetX += Math.cos(angle) * force;
-                    targetY += Math.sin(angle) * force;
+                    targetX = mouse.x + Math.cos(angle) * (mouse.radius + 5);
+                    targetY = mouse.y + Math.sin(angle) * (mouse.radius + 5);
                 }
                 
-                this.x += (targetX - this.x) * 0.15;
-                this.y += (targetY - this.y) * 0.15;
+                this.x += (targetX - this.x) * 0.2;
+                this.y += (targetY - this.y) * 0.2;
             }
 
             draw() {
@@ -358,20 +441,28 @@
             }
         }
 
-        // 등고선 생성 (긴 바람선)
+        // 등고선 생성
         const contourLines = [];
-        const lineSpacing = 40;
+        const lineSpacing = 35;
         const numLines = Math.ceil(height / lineSpacing) + 10;
 
         for (let i = 0; i < numLines; i++) {
-            const y = i * lineSpacing - 200;
-            const baseAngle = Math.PI * 0.1; // 기본 각도
-            contourLines.push(new ContourLine(y, baseAngle));
+            const y = i * lineSpacing - 150;
+            contourLines.push(new ContourLine(y));
         }
 
-        // 빨간 마커 생성 (랜덤 위치)
+        // 동그라미 장식 생성 (불규칙하게)
+        const circles = [];
+        for (let i = 0; i < 60; i++) {
+            const x = Math.random() * width;
+            const y = Math.random() * height;
+            const radius = 8 + Math.random() * 15;
+            circles.push(new CircleDecoration(x, y, radius));
+        }
+
+        // 빨간 마커 생성
         const pressureMarkers = [];
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 18; i++) {
             const x = Math.random() * width;
             const y = Math.random() * height;
             const value = Math.floor(Math.random() * 300);
@@ -380,7 +471,7 @@
 
         // 그리드 숫자 생성
         const gridNumbers = [];
-        for (let i = 0; i < 150; i++) {
+        for (let i = 0; i < 120; i++) {
             const x = Math.random() * width;
             const y = Math.random() * height;
             const value = Math.floor(Math.random() * 400);
@@ -389,12 +480,11 @@
 
         // 그리드 선
         function drawGrid() {
-            ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.12)';
             ctx.lineWidth = 0.5;
             
             const spacing = 50;
             
-            // 세로선
             for (let x = 0; x < width; x += spacing) {
                 ctx.beginPath();
                 ctx.moveTo(x, 0);
@@ -402,7 +492,6 @@
                 ctx.stroke();
             }
             
-            // 가로선
             for (let y = 0; y < height; y += spacing) {
                 ctx.beginPath();
                 ctx.moveTo(0, y);
@@ -418,25 +507,31 @@
             time += 0.02;
             
             // 배경
-            ctx.fillStyle = '#e8e632';
+            ctx.fillStyle = '#f4f400';
             ctx.fillRect(0, 0, width, height);
 
             // 그리드
             drawGrid();
 
-            // 그리드 숫자 업데이트 및 그리기
+            // 그리드 숫자
             gridNumbers.forEach(num => {
                 num.update(time);
                 num.draw();
             });
 
-            // 등고선 업데이트 및 그리기
+            // 등고선
             contourLines.forEach(line => {
                 line.update(time);
                 line.draw();
             });
 
-            // 빨간 마커 업데이트 및 그리기
+            // 동그라미
+            circles.forEach(circle => {
+                circle.update(time);
+                circle.draw();
+            });
+
+            // 빨간 마커
             pressureMarkers.forEach(marker => {
                 marker.update(time);
                 marker.draw();
