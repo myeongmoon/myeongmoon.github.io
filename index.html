@@ -192,6 +192,30 @@
             box-shadow: 0 5px 20px rgba(74, 144, 226, 0.5);
         }
 
+        .noise-btn {
+            position: fixed;
+            top: 200px;
+            left: 20px;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .noise-btn:hover {
+            background: rgba(255, 255, 255, 0.9);
+            color: black;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
         @media (max-width: 768px) {
             .title {
                 top: -60px;
@@ -211,6 +235,7 @@
     <a href="gallery.html" class="gallery-btn">🎨 Gallery</a>
     <a href="umbrella.html" class="umbrella-btn">☂️ Umbrella</a>
     <a href="umbrella-shield.html" class="shield-btn">🛡️ Shield</a>
+    <a href="noise-rain.html" class="noise-btn">◾ Noise</a>
     
     <div class="container">
         <div class="title">FACE OF GRADIENT</div>
