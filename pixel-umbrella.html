@@ -372,7 +372,12 @@
                 if (Math.random() < density) {
                     // 약간의 랜덤 오프셋
                     const offsetX = (Math.random() - 0.5) * spacingX * 0.3;
-                    pixels.push(new RectPixel(x + offsetX, y, density));
+                    const pixel = new RectPixel(x + offsetX, y, density);
+                    
+                    // 초기 위치를 랜덤하게 분산 (균일한 비)
+                    pixel.rainOffset = Math.random() * height * -1;
+                    
+                    pixels.push(pixel);
                 }
             }
         }
