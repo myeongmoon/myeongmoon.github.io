@@ -283,6 +283,7 @@
         <div class="modal-content">
             <h2 class="modal-title">🦷 Welcome!</h2>
             <p style="color: #999; margin-bottom: 20px;">Enter your nickname</p>
+            <p style="color: #ff6b9d; font-size: 0.9rem; margin-bottom: 15px;">⚠️ Game Over at 5 misses!</p>
             <input type="text" class="modal-input" id="nicknameInput" placeholder="Your nickname" maxlength="12">
             <button class="modal-btn" onclick="startGame()">Start Chewing!</button>
         </div>
@@ -350,7 +351,7 @@
             Chewed<span class="score-number" id="chewed">0</span>
         </div>
         <div class="score-item">
-            Missed<span class="score-number" id="missed">0</span>
+            Missed<span class="score-number" id="missed">0</span> / 5
         </div>
     </div>
 
@@ -374,6 +375,10 @@
         let playerName = '';
         let chewedCount = 0;
         let missedCount = 0;
+        const MAX_MISSES = 5;
+        let gameOver = false;
+        let gameTime = 0;
+        let speedMultiplier = 1;
 
         // 마우스
         const mouse = {
@@ -418,6 +423,24 @@
             });
         }
 
+        // 게임 종료
+        function endGame() {
+            gameOver = true;
+            
+            // 최종 점수 저장
+            if (playerName) {
+                saveScore(playerName, chewedCount);
+            }
+            
+            // 게임오버 모달 표시
+            setTimeout(() => {
+                const restart = confirm(`🦷 GAME OVER!\n\n${playerName}\nFinal Score: ${chewedCount}\n\nPlay again?`);
+                if (restart) {
+                    location.reload();
+                }
+            }, 500);
+        }
+
         // 게임 시작
         function startGame() {
             const input = document.getElementById('nicknameInput');
@@ -432,6 +455,24 @@
             document.getElementById('playerName').textContent = playerName;
             document.getElementById('nicknameModal').classList.add('hidden');
             updateLeaderboardDisplay();
+            
+            // 게임 시작
+            gameOver = false;
+            chewedCount = 0;
+            missedCount = 0;
+            gameTime = 0;
+            speedMultiplier = 1;
+            document.getElementById('chewed').textContent = 0;
+            document.getElementById('missed').textContent = 0;
+            
+            // 15초마다 속도 증가
+            setInterval(() => {
+                if (!gameOver) {
+                    gameTime += 15;
+                    speedMultiplier += 0.3;
+                    console.log(`Speed increased! Multiplier: ${speedMultiplier.toFixed(1)}x`);
+                }
+            }, 15000);
         }
 
         // Enter 키로 시작
@@ -496,8 +537,8 @@
                 this.x = Math.random() * (width - 100) + 50;
                 this.y = -50;
                 this.size = 40 + Math.random() * 30;
-                this.speed = 1 + Math.random() * 2;
-                this.chewLevel = 0; // 씹힌 정도 (0-3)
+                this.speed = (1 + Math.random() * 2) * speedMultiplier; // 난이도 증가
+                this.chewLevel = 0;
                 this.isBeingChewed = false;
                 this.opacity = 1;
                 this.emoji = this.getRandomEmoji();
@@ -510,6 +551,8 @@
             }
 
             update() {
+                if (gameOver) return;
+                
                 if (!this.isBeingChewed) {
                     this.y += this.speed;
                     this.rotation += this.rotationSpeed;
@@ -529,6 +572,12 @@
                     if (this.y > height + 50) {
                         missedCount++;
                         document.getElementById('missed').textContent = missedCount;
+                        
+                        // 게임오버 체크
+                        if (missedCount >= MAX_MISSES) {
+                            endGame();
+                        }
+                        
                         this.reset();
                     }
                 } else {
@@ -634,7 +683,11 @@
         }
 
         // 정기적으로 음식 생성
-        setInterval(spawnFood, 1500);
+        setInterval(() => {
+            if (!gameOver) {
+                spawnFood();
+            }
+        }, 1500);
 
         // 배경 장식
         function drawBackground() {
