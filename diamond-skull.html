@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diamond Skull Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a0a1a 50%, #0a0a1a 100%);
+            overflow: hidden;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        #canvas {
+            display: block;
+        }
+
+        /* UI 오버레이 */
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* 타이틀 */
+        .title {
+            position: fixed;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .main-title {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 
+                0 0 10px #00ffff,
+                0 0 20px #00ffff,
+                0 0 30px #00ffff,
+                0 0 40px #ff00ff,
+                0 5px 20px rgba(0, 0, 0, 0.5);
+            letter-spacing: 8px;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: clamp(0.8rem, 1.5vw, 1rem);
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            letter-spacing: 4px;
+        }
+
+        /* 네비게이션 */
+        .nav-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            padding: 15px 30px;
+            background: rgba(0, 255, 255, 0.2);
+            color: #00ffff;
+            text-decoration: none;
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            transition: all 0.3s;
+            z-index: 1000;
+            font-size: 14px;
+            font-weight: 700;
+            pointer-events: auto;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+        }
+
+        .nav-btn:hover {
+            background: rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+        }
+
+        /* 스코어보드 */
+        .scoreboard {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 30px;
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+        }
+
+        .score-item {
+            margin: 10px 0;
+            font-size: 1rem;
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .score-label {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .score-value {
+            color: #ff00ff;
+            font-size: 1.8rem;
+            margin-left: 15px;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        /* 안내 */
+        .info {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ffff;
+            font-size: 1rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px #00ffff;
+            letter-spacing: 2px;
+        }
+
+        /* 닉네임 모달 */
+        .nickname-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            pointer-events: auto;
+        }
+
+        .nickname-modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a0a1a 0%, #0a0a1a 100%);
+            padding: 50px;
+            border: 3px solid #00ffff;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.5);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-title {
+            font-size: 3rem;
+            color: #00ffff;
+            margin-bottom: 20px;
+            font-weight: 900;
+            text-shadow: 0 0 20px #00ffff;
+        }
+
+        .modal-subtitle {
+            color: #ff00ff;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.2rem;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #00ffff;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-family: 'Orbitron', sans-serif;
+            color: #00ffff;
+            outline: none;
+            text-align: center;
+        }
+
+        .modal-input::placeholder {
+            color: rgba(0, 255, 255, 0.3);
+        }
+
+        .modal-btn {
+            background: linear-gradient(135deg, #00ffff 0%, #ff00ff 100%);
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 0.8);
+        }
+
+        /* 게임오버 모달 */
+        .gameover-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            pointer-events: auto;
+        }
+
+        .gameover-modal.hidden {
+            display: none;
+        }
+
+        .gameover-content {
+            background: linear-gradient(135deg, #1a0a1a 0%, #0a0a1a 100%);
+            padding: 60px;
+            border: 3px solid #ff00ff;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(255, 0, 255, 0.5);
+        }
+
+        .gameover-title {
+            font-size: 4rem;
+            color: #ff00ff;
+            margin-bottom: 30px;
+            font-weight: 900;
+            text-shadow: 0 0 30px #ff00ff;
+        }
+
+        .final-score {
+            font-size: 2.5rem;
+            color: #00ffff;
+            margin: 20px 0;
+            text-shadow: 0 0 20px #00ffff;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);
+            color: #000;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.3rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 40px rgba(255, 0, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="ui-overlay">
+        <a href="index.html" class="nav-btn">← HOME</a>
+
+        <div class="title">
+            <h1 class="main-title">💎 DIAMOND SKULL 💎</h1>
+            <p class="subtitle">CATCH THE SKULLS</p>
+        </div>
+
+        <div class="scoreboard">
+            <div class="score-item">
+                <span class="score-label">PLAYER</span>
+                <span class="score-value" style="font-size: 1.2rem;" id="playerName">-</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">SCORE</span>
+                <span class="score-value" id="score">0</span>
+            </div>
+            <div class="score-item">
+                <span class="score-label">MISSED</span>
+                <span class="score-value" id="missed">0</span> / 3
+            </div>
+        </div>
+
+        <div class="info">💀 Click on SKULLS only! Avoid ❤️ and 💎</div>
+    </div>
+
+    <!-- 닉네임 모달 -->
+    <div class="nickname-modal" id="nicknameModal">
+        <div class="modal-content">
+            <h2 class="modal-title">💎☠️💎</h2>
+            <p class="modal-subtitle">Enter Your Name</p>
+            <input type="text" class="modal-input" id="nicknameInput" placeholder="PLAYER NAME" maxlength="12">
+            <button class="modal-btn" onclick="startGame()">START GAME</button>
+        </div>
+    </div>
+
+    <!-- 게임오버 모달 -->
+    <div class="gameover-modal hidden" id="gameoverModal">
+        <div class="gameover-content">
+            <h2 class="gameover-title">GAME OVER</h2>
+            <p class="final-score">FINAL SCORE: <span id="finalScore">0</span></p>
+            <p style="color: #fff; margin: 20px 0;">
+                Player: <span style="color: #00ffff;" id="finalPlayer">-</span>
+            </p>
+            <button class="restart-btn" onclick="location.reload()">PLAY AGAIN</button>
+            <button class="restart-btn" onclick="location.href='index.html'">GO HOME</button>
+        </div>
+    </div>
+
+    <script>
+        // Three.js 씬 설정
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x0a0a0a, 10, 50);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 8;
+
+        const renderer = new THREE.WebGLRenderer({ 
+            canvas: document.getElementById('canvas'),
+            antialias: true,
+            alpha: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // 조명
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00ffff, 1, 100);
+        pointLight1.position.set(0, 5, 5);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0xff00ff, 1, 100);
+        pointLight2.position.set(0, -5, 5);
+        scene.add(pointLight2);
+
+        const spotLight = new THREE.SpotLight(0xffffff, 1);
+        spotLight.position.set(0, 10, 10);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        // 게임 변수
+        let playerName = '';
+        let score = 0;
+        let missed = 0;
+        const MAX_MISSED = 3;
+        let gameOver = false;
+        let speedMultiplier = 1;
+        let gameTime = 0;
+
+        // 중앙 다이아몬드 해골 생성
+        function createDiamondSkull() {
+            const group = new THREE.Group();
+
+            // 해골 머리 (다이아몬드 형태)
+            const headGeometry = new THREE.OctahedronGeometry(1, 0);
+            const headMaterial = new THREE.MeshPhongMaterial({
+                color: 0xcccccc,
+                emissive: 0x00ffff,
+                emissiveIntensity: 0.3,
+                shininess: 100,
+                specular: 0xffffff
+            });
+            const head = new THREE.Mesh(headGeometry, headMaterial);
+            head.castShadow = true;
+            group.add(head);
+
+            // 눈 구멍 (왼쪽)
+            const eyeGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+            const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            leftEye.position.set(-0.3, 0.2, 0.8);
+            group.add(leftEye);
+
+            // 눈 구멍 (오른쪽)
+            const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+            rightEye.position.set(0.3, 0.2, 0.8);
+            group.add(rightEye);
+
+            // 입 (열린 상태)
+            const mouthGeometry = new THREE.TorusGeometry(0.3, 0.1, 16, 32, Math.PI);
+            const mouthMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            const mouth = new THREE.Mesh(mouthGeometry, mouthMaterial);
+            mouth.position.set(0, -0.3, 0.8);
+            mouth.rotation.x = Math.PI;
+            group.add(mouth);
+
+            // 글로우 효과
+            const glowGeometry = new THREE.OctahedronGeometry(1.2, 0);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.1,
+                side: THREE.BackSide
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            group.add(glow);
+
+            group.position.set(0, 0, 0);
+            return group;
+        }
+
+        const diamondSkull = createDiamondSkull();
+        scene.add(diamondSkull);
+
+        // 떠다니는 오브젝트 생성
+        class FloatingObject {
+            constructor(type) {
+                this.type = type; // 'skull', 'heart', 'diamond'
+                this.object = this.createObject();
+                this.speed = (0.02 + Math.random() * 0.02) * speedMultiplier;
+                this.reset();
+                scene.add(this.object);
+            }
+
+            createObject() {
+                const group = new THREE.Group();
+
+                if (this.type === 'skull') {
+                    // 해골 (작은 버전)
+                    const geometry = new THREE.OctahedronGeometry(0.4, 0);
+                    const material = new THREE.MeshPhongMaterial({
+                        color: 0xaaaaaa,
+                        emissive: 0xff00ff,
+                        emissiveIntensity: 0.2,
+                        shininess: 50
+                    });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    group.add(mesh);
+
+                } else if (this.type === 'heart') {
+                    // 하트 (두 개의 구체 + 피라미드)
+                    const shape = new THREE.Shape();
+                    shape.moveTo(0, 0);
+                    shape.bezierCurveTo(0, -0.3, -0.6, -0.3, -0.6, 0);
+                    shape.bezierCurveTo(-0.6, 0.3, 0, 0.6, 0, 1);
+                    shape.bezierCurveTo(0, 0.6, 0.6, 0.3, 0.6, 0);
+                    shape.bezierCurveTo(0.6, -0.3, 0, -0.3, 0, 0);
+
+                    const extrudeSettings = { depth: 0.3, bevelEnabled: true, bevelThickness: 0.1 };
+                    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+                    const material = new THREE.MeshPhongMaterial({
+                        color: 0xff0066,
+                        emissive: 0xff0066,
+                        emissiveIntensity: 0.3,
+                        shininess: 100
+                    });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    mesh.scale.set(0.3, 0.3, 0.3);
+                    group.add(mesh);
+
+                } else if (this.type === 'diamond') {
+                    // 다이아몬드
+                    const geometry = new THREE.OctahedronGeometry(0.4, 0);
+                    const material = new THREE.MeshPhongMaterial({
+                        color: 0x00ffff,
+                        emissive: 0x00ffff,
+                        emissiveIntensity: 0.5,
+                        shininess: 100,
+                        transparent: true,
+                        opacity: 0.8
+                    });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    group.add(mesh);
+                }
+
+                return group;
+            }
+
+            reset() {
+                this.object.position.x = -12;
+                this.object.position.y = (Math.random() - 0.5) * 4;
+                this.object.position.z = (Math.random() - 0.5) * 2;
+                this.object.rotation.set(
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI,
+                    Math.random() * Math.PI
+                );
+                this.clicked = false;
+                this.speed = (0.02 + Math.random() * 0.03) * speedMultiplier;
+            }
+
+            update() {
+                if (gameOver) return;
+
+                this.object.position.x += this.speed;
+                this.object.rotation.x += 0.01;
+                this.object.rotation.y += 0.02;
+
+                // 화면 밖으로 나가면
+                if (this.object.position.x > 12) {
+                    if (this.type === 'skull' && !this.clicked) {
+                        // 해골을 놓쳤을 때만 미스 카운트
+                        missed++;
+                        document.getElementById('missed').textContent = missed;
+                        if (missed >= MAX_MISSED) {
+                            endGame();
+                        }
+                    }
+                    this.reset();
+                }
+            }
+        }
+
+        // 오브젝트 생성
+        const objects = [];
+        function spawnObjects() {
+            const types = ['skull', 'heart', 'diamond'];
+            for (let i = 0; i < 3; i++) {
+                const randomType = types[Math.floor(Math.random() * types.length)];
+                objects.push(new FloatingObject(randomType));
+            }
+        }
+
+        spawnObjects();
+
+        // 정기적으로 오브젝트 추가
+        setInterval(() => {
+            if (!gameOver && objects.length < 10) {
+                const types = ['skull', 'heart', 'diamond'];
+                const randomType = types[Math.floor(Math.random() * types.length)];
+                objects.push(new FloatingObject(randomType));
+            }
+        }, 2000);
+
+        // 마우스 클릭 감지
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            if (gameOver) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            objects.forEach(obj => {
+                const intersects = raycaster.intersectObjects(obj.object.children, true);
+                
+                if (intersects.length > 0 && !obj.clicked) {
+                    obj.clicked = true;
+
+                    if (obj.type === 'skull') {
+                        // 해골 클릭 - 점수 획득
+                        score++;
+                        document.getElementById('score').textContent = score;
+                        
+                        // 파티클 효과
+                        createParticles(obj.object.position, 0xff00ff);
+                        
+                    } else {
+                        // 하트나 다이아몬드 클릭 - 페널티
+                        score = Math.max(0, score - 1);
+                        document.getElementById('score').textContent = score;
+                        
+                        // 빨간 파티클
+                        createParticles(obj.object.position, 0xff0000);
+                    }
+
+                    // 오브젝트 제거
+                    scene.remove(obj.object);
+                    objects.splice(objects.indexOf(obj), 1);
+                }
+            });
+        });
+
+        // 파티클 효과
+        function createParticles(position, color) {
+            const particleCount = 20;
+            for (let i = 0; i < particleCount; i++) {
+                const geometry = new THREE.SphereGeometry(0.05, 8, 8);
+                const material = new THREE.MeshBasicMaterial({ color: color });
+                const particle = new THREE.Mesh(geometry, material);
+                
+                particle.position.copy(position);
+                particle.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.2,
+                    (Math.random() - 0.5) * 0.2,
+                    (Math.random() - 0.5) * 0.2
+                );
+                
+                scene.add(particle);
+                
+                // 파티클 애니메이션
+                let life = 1;
+                const animate = () => {
+                    particle.position.add(particle.velocity);
+                    particle.velocity.y -= 0.01;
+                    life -= 0.02;
+                    particle.material.opacity = life;
+                    particle.material.transparent = true;
+                    
+                    if (life > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        scene.remove(particle);
+                    }
+                };
+                animate();
+            }
+        }
+
+        // 게임 시작
+        function startGame() {
+            const input = document.getElementById('nicknameInput');
+            const nickname = input.value.trim();
+            
+            if (nickname === '') {
+                alert('Please enter your name!');
+                return;
+            }
+            
+            playerName = nickname;
+            document.getElementById('playerName').textContent = playerName;
+            document.getElementById('nicknameModal').classList.add('hidden');
+            
+            // 난이도 증가
+            setInterval(() => {
+                if (!gameOver) {
+                    speedMultiplier += 0.2;
+                    objects.forEach(obj => {
+                        obj.speed = (0.02 + Math.random() * 0.03) * speedMultiplier;
+                    });
+                }
+            }, 15000);
+        }
+
+        // 게임 종료
+        function endGame() {
+            gameOver = true;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalPlayer').textContent = playerName;
+            document.getElementById('gameoverModal').classList.remove('hidden');
+        }
+
+        // Enter 키 처리
+        document.getElementById('nicknameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                startGame();
+            }
+        });
+
+        // 애니메이션 루프
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!gameOver) {
+                // 중앙 해골 회전
+                diamondSkull.rotation.y += 0.01;
+                diamondSkull.rotation.z = Math.sin(Date.now() * 0.001) * 0.1;
+
+                // 오브젝트 업데이트
+                objects.forEach(obj => obj.update());
+
+                // 조명 애니메이션
+                pointLight1.intensity = 1 + Math.sin(Date.now() * 0.003) * 0.3;
+                pointLight2.intensity = 1 + Math.cos(Date.now() * 0.003) * 0.3;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // 리사이즈
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
