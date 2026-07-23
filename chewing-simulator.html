@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chewing Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #ffd6e8 0%, #ffe8f5 50%, #fff5e8 100%);
+            overflow: hidden;
+            font-family: 'Fredoka', sans-serif;
+            cursor: none;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* 타이틀 */
+        .title {
+            position: fixed;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .main-title {
+            font-size: clamp(2rem, 6vw, 4rem);
+            font-weight: 700;
+            color: #ff6b9d;
+            text-shadow: 3px 3px 0 #fff, 6px 6px 0 rgba(255, 107, 157, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            color: #ff8fab;
+            font-weight: 400;
+        }
+
+        /* 네비게이션 */
+        .nav-btn {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            padding: 15px 30px;
+            background: #ff6b9d;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 50px;
+            transition: all 0.3s;
+            z-index: 1000;
+            font-size: 14px;
+            font-weight: 700;
+            box-shadow: 0 5px 15px rgba(255, 107, 157, 0.3);
+        }
+
+        .nav-btn:hover {
+            background: #ff8fab;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(255, 107, 157, 0.4);
+        }
+
+        /* 어금니 커서 */
+        .molar-cursor {
+            position: fixed;
+            width: 100px;
+            height: 100px;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease;
+        }
+
+        .molar-cursor.chomping {
+            animation: chomp 0.3s ease;
+        }
+
+        @keyframes chomp {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(0.9); }
+        }
+
+        /* 스코어 */
+        .score-board {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: white;
+            padding: 20px 30px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .score-item {
+            margin: 8px 0;
+            font-size: 1rem;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .score-number {
+            color: #ff6b9d;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-left: 10px;
+        }
+
+        /* 안내 */
+        .info {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff8fab;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 10;
+            animation: bounce 2s ease-in-out infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
+        @media (max-width: 768px) {
+            .molar-cursor {
+                display: none;
+            }
+            body {
+                cursor: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="nav-btn">← HOME</a>
+
+    <!-- 어금니 커서 -->
+    <div class="molar-cursor" id="molarCursor">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <!-- 어금니 모양 -->
+            <defs>
+                <filter id="shadow">
+                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-opacity="0.3"/>
+                </filter>
+            </defs>
+            
+            <!-- 어금니 본체 -->
+            <ellipse cx="50" cy="45" rx="35" ry="30" fill="#fff" stroke="#ffd6e8" stroke-width="3" filter="url(#shadow)"/>
+            
+            <!-- 교합면 (씹는 면) -->
+            <ellipse cx="50" cy="40" rx="30" ry="20" fill="#ffe8f5"/>
+            
+            <!-- 교합면 홈들 (귀여운 느낌) -->
+            <path d="M 35 40 Q 40 35 45 40" stroke="#ffd6e8" stroke-width="2" fill="none"/>
+            <path d="M 55 40 Q 60 35 65 40" stroke="#ffd6e8" stroke-width="2" fill="none"/>
+            <circle cx="50" cy="38" r="3" fill="#ffd6e8"/>
+            
+            <!-- 뿌리 -->
+            <path d="M 35 60 L 40 75 L 45 75 L 50 60" fill="#fff" stroke="#ffd6e8" stroke-width="2"/>
+            <path d="M 50 60 L 55 75 L 60 75 L 65 60" fill="#fff" stroke="#ffd6e8" stroke-width="2"/>
+            
+            <!-- 귀여운 얼굴 -->
+            <circle cx="42" cy="42" r="2" fill="#ff6b9d"/>
+            <circle cx="58" cy="42" r="2" fill="#ff6b9d"/>
+            <path d="M 45 48 Q 50 50 55 48" stroke="#ff6b9d" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="title">
+        <h1 class="main-title">🦷 CHEWING SIMULATOR</h1>
+        <p class="subtitle">Catch & Chew!</p>
+    </div>
+
+    <div class="score-board">
+        <div class="score-item">
+            Chewed<span class="score-number" id="chewed">0</span>
+        </div>
+        <div class="score-item">
+            Missed<span class="score-number" id="missed">0</span>
+        </div>
+    </div>
+
+    <div class="info">🖱️ Move & Click to Chew!</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const molarCursor = document.getElementById('molarCursor');
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // 점수
+        let chewedCount = 0;
+        let missedCount = 0;
+
+        // 마우스
+        const mouse = {
+            x: width / 2,
+            y: height / 2,
+            radius: 50,
+            isChomping: false
+        };
+
+        // 마우스 이벤트
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            
+            molarCursor.style.left = e.clientX + 'px';
+            molarCursor.style.top = e.clientY + 'px';
+        });
+
+        document.addEventListener('mousedown', () => {
+            mouse.isChomping = true;
+            molarCursor.classList.add('chomping');
+            
+            setTimeout(() => {
+                mouse.isChomping = false;
+                molarCursor.classList.remove('chomping');
+            }, 300);
+        });
+
+        // 음식 클래스
+        class Food {
+            constructor() {
+                this.reset();
+                this.emoji = this.getRandomEmoji();
+                this.rotation = 0;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+            }
+
+            reset() {
+                this.x = Math.random() * (width - 100) + 50;
+                this.y = -50;
+                this.size = 40 + Math.random() * 30;
+                this.speed = 1 + Math.random() * 2;
+                this.chewLevel = 0; // 씹힌 정도 (0-3)
+                this.isBeingChewed = false;
+                this.opacity = 1;
+                this.emoji = this.getRandomEmoji();
+                this.particles = [];
+            }
+
+            getRandomEmoji() {
+                const emojis = ['🍎', '🍊', '🍌', '🍇', '🍓', '🥕', '🥦', '🍞', '🧀', '🍖', '🍗', '🥐', '🥖', '🍕', '🍔', '🌮'];
+                return emojis[Math.floor(Math.random() * emojis.length)];
+            }
+
+            update() {
+                if (!this.isBeingChewed) {
+                    this.y += this.speed;
+                    this.rotation += this.rotationSpeed;
+                    
+                    // 마우스와 충돌 체크
+                    if (mouse.isChomping) {
+                        const dx = this.x - mouse.x;
+                        const dy = this.y - mouse.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < mouse.radius + this.size / 2) {
+                            this.chew();
+                        }
+                    }
+                    
+                    // 화면 밖으로 나가면 미스
+                    if (this.y > height + 50) {
+                        missedCount++;
+                        document.getElementById('missed').textContent = missedCount;
+                        this.reset();
+                    }
+                } else {
+                    // 씹히는 중
+                    this.opacity -= 0.05;
+                    
+                    // 파티클 생성
+                    for (let i = 0; i < 2; i++) {
+                        this.particles.push({
+                            x: this.x,
+                            y: this.y,
+                            vx: (Math.random() - 0.5) * 8,
+                            vy: (Math.random() - 0.5) * 8,
+                            size: Math.random() * 10 + 5,
+                            opacity: 1,
+                            color: `hsl(${Math.random() * 60 + 10}, 80%, 60%)`
+                        });
+                    }
+                    
+                    if (this.opacity <= 0) {
+                        this.reset();
+                    }
+                }
+                
+                // 파티클 업데이트
+                this.particles.forEach((p, index) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.3; // 중력
+                    p.opacity -= 0.02;
+                    
+                    if (p.opacity <= 0) {
+                        this.particles.splice(index, 1);
+                    }
+                });
+            }
+
+            chew() {
+                this.chewLevel++;
+                
+                if (this.chewLevel >= 3) {
+                    // 완전히 씹힘
+                    this.isBeingChewed = true;
+                    chewedCount++;
+                    document.getElementById('chewed').textContent = chewedCount;
+                } else {
+                    // 점점 작아짐
+                    this.size *= 0.7;
+                    
+                    // 튕기는 효과
+                    this.y -= 20;
+                    this.rotation += Math.PI / 4;
+                }
+            }
+
+            draw() {
+                if (this.opacity <= 0) return;
+                
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                
+                // 이모지로 음식 그리기
+                ctx.font = `${this.size}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // 씹힌 정도에 따라 찌그러진 모양
+                if (this.chewLevel > 0) {
+                    ctx.scale(1 - this.chewLevel * 0.15, 1 + this.chewLevel * 0.1);
+                }
+                
+                ctx.fillText(this.emoji, 0, 0);
+                
+                ctx.restore();
+                
+                // 파티클 그리기
+                this.particles.forEach(p => {
+                    ctx.save();
+                    ctx.globalAlpha = p.opacity;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                });
+            }
+        }
+
+        // 음식 생성
+        const foods = [];
+        
+        function spawnFood() {
+            if (foods.length < 5) {
+                foods.push(new Food());
+            }
+        }
+
+        // 정기적으로 음식 생성
+        setInterval(spawnFood, 1500);
+
+        // 배경 장식
+        function drawBackground() {
+            // 부드러운 원들
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = 0; i < 5; i++) {
+                const x = (Math.sin(Date.now() * 0.0005 + i) + 1) * width / 2;
+                const y = (Math.cos(Date.now() * 0.0003 + i) + 1) * height / 2;
+                const size = 50 + Math.sin(Date.now() * 0.001 + i) * 30;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // 애니메이션
+        function animate() {
+            // 배경
+            ctx.fillStyle = '#ffd6e8';
+            ctx.fillRect(0, 0, width, height);
+            
+            // 배경 장식
+            drawBackground();
+
+            // 음식 업데이트 및 그리기
+            foods.forEach((food, index) => {
+                food.update();
+                food.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // 리사이즈
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // 시작
+        animate();
+
+        // 초기 커서 위치
+        molarCursor.style.left = (width / 2) + 'px';
+        molarCursor.style.top = (height / 2) + 'px';
+    </script>
+</body>
+</html>
