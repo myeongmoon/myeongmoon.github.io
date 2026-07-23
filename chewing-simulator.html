@@ -140,6 +140,127 @@
             50% { transform: translateX(-50%) translateY(-10px); }
         }
 
+        /* 닉네임 입력 모달 */
+        .nickname-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .nickname-modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            color: #ff6b9d;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border: 3px solid #ffd6e8;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-family: 'Fredoka', sans-serif;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .modal-input:focus {
+            border-color: #ff6b9d;
+        }
+
+        .modal-btn {
+            background: #ff6b9d;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+
+        .modal-btn:hover {
+            background: #ff8fab;
+            transform: translateY(-2px);
+        }
+
+        /* 리더보드 */
+        .leaderboard {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            z-index: 100;
+            max-width: 300px;
+        }
+
+        .leaderboard-title {
+            font-size: 1.2rem;
+            color: #ff6b9d;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 10px;
+            margin: 5px 0;
+            background: #fff5f8;
+            border-radius: 10px;
+            font-size: 0.9rem;
+        }
+
+        .leaderboard-item.current {
+            background: #ffd6e8;
+            font-weight: 700;
+        }
+
+        .leaderboard-rank {
+            color: #ff6b9d;
+            font-weight: 700;
+            margin-right: 10px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            color: #666;
+        }
+
+        .leaderboard-score {
+            color: #ff6b9d;
+            font-weight: 700;
+        }
+
         @media (max-width: 768px) {
             .molar-cursor {
                 display: none;
@@ -147,10 +268,25 @@
             body {
                 cursor: auto;
             }
+            .leaderboard {
+                bottom: 100px;
+                right: 20px;
+                left: 20px;
+                max-width: none;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- 닉네임 입력 모달 -->
+    <div class="nickname-modal" id="nicknameModal">
+        <div class="modal-content">
+            <h2 class="modal-title">🦷 Welcome!</h2>
+            <p style="color: #999; margin-bottom: 20px;">Enter your nickname</p>
+            <input type="text" class="modal-input" id="nicknameInput" placeholder="Your nickname" maxlength="12">
+            <button class="modal-btn" onclick="startGame()">Start Chewing!</button>
+        </div>
+    </div>
     <a href="index.html" class="nav-btn">← HOME</a>
 
     <!-- 어금니 커서 -->
@@ -163,25 +299,39 @@
                 </filter>
             </defs>
             
-            <!-- 어금니 본체 -->
-            <ellipse cx="50" cy="45" rx="35" ry="30" fill="#fff" stroke="#ffd6e8" stroke-width="3" filter="url(#shadow)"/>
+            <!-- 상단 어금니 (위턱) -->
+            <g id="upperMolar">
+                <ellipse cx="50" cy="35" rx="35" ry="20" fill="#fff" stroke="#ffd6e8" stroke-width="3" filter="url(#shadow)"/>
+                <ellipse cx="50" cy="32" rx="30" ry="15" fill="#ffe8f5"/>
+                <path d="M 35 32 Q 40 28 45 32" stroke="#ffd6e8" stroke-width="2" fill="none"/>
+                <path d="M 55 32 Q 60 28 65 32" stroke="#ffd6e8" stroke-width="2" fill="none"/>
+                <circle cx="50" cy="30" r="2" fill="#ffd6e8"/>
+            </g>
             
-            <!-- 교합면 (씹는 면) -->
-            <ellipse cx="50" cy="40" rx="30" ry="20" fill="#ffe8f5"/>
-            
-            <!-- 교합면 홈들 (귀여운 느낌) -->
-            <path d="M 35 40 Q 40 35 45 40" stroke="#ffd6e8" stroke-width="2" fill="none"/>
-            <path d="M 55 40 Q 60 35 65 40" stroke="#ffd6e8" stroke-width="2" fill="none"/>
-            <circle cx="50" cy="38" r="3" fill="#ffd6e8"/>
-            
-            <!-- 뿌리 -->
-            <path d="M 35 60 L 40 75 L 45 75 L 50 60" fill="#fff" stroke="#ffd6e8" stroke-width="2"/>
-            <path d="M 50 60 L 55 75 L 60 75 L 65 60" fill="#fff" stroke="#ffd6e8" stroke-width="2"/>
+            <!-- 하단 어금니 (아래턱) -->
+            <g id="lowerMolar">
+                <ellipse cx="50" cy="65" rx="35" ry="20" fill="#fff" stroke="#ffd6e8" stroke-width="3" filter="url(#shadow)"/>
+                <ellipse cx="50" cy="62" rx="30" ry="15" fill="#ffe8f5"/>
+                <path d="M 35 62 Q 40 58 45 62" stroke="#ffd6e8" stroke-width="2" fill="none"/>
+                <path d="M 55 62 Q 60 58 65 62" stroke="#ffd6e8" stroke-width="2" fill="none"/>
+                <circle cx="50" cy="60" r="2" fill="#ffd6e8"/>
+                
+                <!-- 뿌리 -->
+                <path d="M 35 75 L 40 90 L 45 90 L 50 75" fill="#fff" stroke="#ffd6e8" stroke-width="2"/>
+                <path d="M 50 75 L 55 90 L 60 90 L 65 75" fill="#fff" stroke="#ffd6e8" stroke-width="2"/>
+            </g>
             
             <!-- 귀여운 얼굴 -->
-            <circle cx="42" cy="42" r="2" fill="#ff6b9d"/>
-            <circle cx="58" cy="42" r="2" fill="#ff6b9d"/>
-            <path d="M 45 48 Q 50 50 55 48" stroke="#ff6b9d" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="42" cy="48" r="2" fill="#ff6b9d"/>
+            <circle cx="58" cy="48" r="2" fill="#ff6b9d"/>
+            
+            <!-- 입 (열림/닫힘 상태) -->
+            <g id="mouthClosed">
+                <path d="M 45 55 Q 50 57 55 55" stroke="#ff6b9d" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </g>
+            <g id="mouthOpen" style="display: none;">
+                <ellipse cx="50" cy="55" rx="8" ry="6" fill="#ff6b9d" opacity="0.5"/>
+            </g>
         </svg>
     </div>
 
@@ -193,12 +343,21 @@
     </div>
 
     <div class="score-board">
+        <div class="score-item" style="font-size: 1.1rem; color: #ff6b9d; margin-bottom: 15px;">
+            👤 <span id="playerName">Player</span>
+        </div>
         <div class="score-item">
             Chewed<span class="score-number" id="chewed">0</span>
         </div>
         <div class="score-item">
             Missed<span class="score-number" id="missed">0</span>
         </div>
+    </div>
+
+    <!-- 리더보드 -->
+    <div class="leaderboard">
+        <div class="leaderboard-title">🏆 TOP 5</div>
+        <div id="leaderboardList"></div>
     </div>
 
     <div class="info">🖱️ Move & Click to Chew!</div>
@@ -211,7 +370,8 @@
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
-        // 점수
+        // 플레이어
+        let playerName = '';
         let chewedCount = 0;
         let missedCount = 0;
 
@@ -222,6 +382,64 @@
             radius: 50,
             isChomping: false
         };
+
+        // 로컬 스토리지에서 리더보드 불러오기
+        function getLeaderboard() {
+            const saved = localStorage.getItem('chewingLeaderboard');
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        // 리더보드 저장
+        function saveScore(name, score) {
+            let leaderboard = getLeaderboard();
+            leaderboard.push({ name, score, date: Date.now() });
+            leaderboard.sort((a, b) => b.score - a.score);
+            leaderboard = leaderboard.slice(0, 10); // 상위 10명만
+            localStorage.setItem('chewingLeaderboard', JSON.stringify(leaderboard));
+            updateLeaderboardDisplay();
+        }
+
+        // 리더보드 표시
+        function updateLeaderboardDisplay() {
+            const leaderboard = getLeaderboard();
+            const listEl = document.getElementById('leaderboardList');
+            listEl.innerHTML = '';
+            
+            leaderboard.slice(0, 5).forEach((entry, index) => {
+                const isCurrent = entry.name === playerName && Math.abs(entry.score - chewedCount) < 5;
+                const itemEl = document.createElement('div');
+                itemEl.className = 'leaderboard-item' + (isCurrent ? ' current' : '');
+                itemEl.innerHTML = `
+                    <span class="leaderboard-rank">#${index + 1}</span>
+                    <span class="leaderboard-name">${entry.name}</span>
+                    <span class="leaderboard-score">${entry.score}</span>
+                `;
+                listEl.appendChild(itemEl);
+            });
+        }
+
+        // 게임 시작
+        function startGame() {
+            const input = document.getElementById('nicknameInput');
+            const nickname = input.value.trim();
+            
+            if (nickname === '') {
+                alert('Please enter your nickname!');
+                return;
+            }
+            
+            playerName = nickname;
+            document.getElementById('playerName').textContent = playerName;
+            document.getElementById('nicknameModal').classList.add('hidden');
+            updateLeaderboardDisplay();
+        }
+
+        // Enter 키로 시작
+        document.getElementById('nicknameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                startGame();
+            }
+        });
 
         // 마우스 이벤트
         document.addEventListener('mousemove', (e) => {
@@ -236,9 +454,32 @@
             mouse.isChomping = true;
             molarCursor.classList.add('chomping');
             
+            // 입 벌리기
+            const svg = molarCursor.querySelector('svg');
+            const upperMolar = svg.getElementById('upperMolar');
+            const lowerMolar = svg.getElementById('lowerMolar');
+            const mouthClosed = svg.getElementById('mouthClosed');
+            const mouthOpen = svg.getElementById('mouthOpen');
+            
+            // 위아래 어금니 벌리기
+            upperMolar.style.transform = 'translateY(-5px)';
+            upperMolar.style.transition = 'transform 0.1s ease';
+            lowerMolar.style.transform = 'translateY(5px)';
+            lowerMolar.style.transition = 'transform 0.1s ease';
+            
+            // 입 모양 변경
+            mouthClosed.style.display = 'none';
+            mouthOpen.style.display = 'block';
+            
             setTimeout(() => {
                 mouse.isChomping = false;
                 molarCursor.classList.remove('chomping');
+                
+                // 입 닫기
+                upperMolar.style.transform = 'translateY(0)';
+                lowerMolar.style.transform = 'translateY(0)';
+                mouthClosed.style.display = 'block';
+                mouthOpen.style.display = 'none';
             }, 300);
         });
 
@@ -333,6 +574,11 @@
                     this.isBeingChewed = true;
                     chewedCount++;
                     document.getElementById('chewed').textContent = chewedCount;
+                    
+                    // 리더보드 업데이트
+                    if (playerName) {
+                        saveScore(playerName, chewedCount);
+                    }
                 } else {
                     // 점점 작아짐
                     this.size *= 0.7;
