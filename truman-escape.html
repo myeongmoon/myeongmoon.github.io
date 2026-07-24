@@ -200,8 +200,8 @@
         const STAIR_WIDTH = 200;
         const STAIR_HEIGHT = 25;
         
-        // 첫 계단 생성
-        for (let i = 0; i < 60; i++) {
+        // 충분한 계단 생성 (150개)
+        for (let i = 0; i < 150; i++) {
             stairs.push({
                 x: i * 180,
                 y: canvas.height - 100 - (i * 70),
@@ -209,6 +209,15 @@
                 height: STAIR_HEIGHT
             });
         }
+        
+        // 마지막 계단 (출구용 플랫폼)
+        const exitStair = stairs[stairs.length - 1];
+        const exitDoor = {
+            x: exitStair.x + exitStair.width / 2 - 60,
+            y: exitStair.y - 180,
+            width: 120,
+            height: 160
+        };
         
         // 장애물들
         const obstacles = [];
@@ -327,11 +336,16 @@
                     document.getElementById('cleared').textContent = cleared;
                     
                     if (cleared >= 50) {
-                        gameOver = true;
-                        document.getElementById('winModal').classList.remove('hidden');
+                        // 모든 장애물 클리어 - 출구 도달 체크
+                        checkExitReached();
                     }
                 }
             });
+            
+            // 출구 도달 체크
+            if (cleared >= 50) {
+                checkExitReached();
+            }
             
             // 떨어지면 게임오버
             if (player.worldY > canvas.height + 500) {
@@ -339,6 +353,21 @@
                 gameOver = true;
                 document.getElementById('finalCleared').textContent = cleared;
                 document.getElementById('gameoverModal').classList.remove('hidden');
+            }
+        }
+        
+        // 출구 도달 체크
+        function checkExitReached() {
+            if (gameOver) return;
+            
+            // 출구 문에 닿았는지 체크
+            if (player.worldX + player.width > exitDoor.x &&
+                player.worldX < exitDoor.x + exitDoor.width &&
+                player.worldY + player.height > exitDoor.y &&
+                player.worldY < exitDoor.y + exitDoor.height) {
+                
+                gameOver = true;
+                document.getElementById('winModal').classList.remove('hidden');
             }
         }
         
@@ -420,6 +449,47 @@
                     ctx.globalAlpha = 1;
                 }
             });
+            
+            // 출구 문 그리기 (50개 클리어 후)
+            if (cleared >= 50) {
+                const doorX = exitDoor.x - cameraX;
+                const doorY = exitDoor.y - cameraY;
+                
+                if (doorX > -200 && doorX < canvas.width + 200) {
+                    ctx.save();
+                    
+                    // 빛나는 효과
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = '#fff';
+                    
+                    // 문 프레임 (하얀색)
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(doorX, doorY, exitDoor.width, exitDoor.height);
+                    
+                    // 문 안쪽 (파란색)
+                    ctx.fillStyle = '#1a4d6d';
+                    ctx.fillRect(doorX + 10, doorY + 10, exitDoor.width - 20, exitDoor.height - 20);
+                    
+                    // 문 손잡이
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(doorX + exitDoor.width - 30, doorY + exitDoor.height / 2, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // EXIT 텍스트
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 24px Cinzel';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('EXIT', doorX + exitDoor.width / 2, doorY - 20);
+                    
+                    // 화살표
+                    ctx.font = '30px Arial';
+                    ctx.fillText('↑', doorX + exitDoor.width / 2, doorY - 50);
+                    
+                    ctx.restore();
+                    ctx.textAlign = 'left';
+                }
+            }
             
             // 플레이어 그리기 (화면 중앙 고정)
             ctx.fillStyle = '#fff';
