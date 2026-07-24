@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truman's Escape - The Stairway to Freedom</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Playfair+Display:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Cinzel', serif;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+            image-rendering: pixelated;
+        }
+
+        /* 닉네임 입력 모달 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a4d6d 0%, #2a5f7e 100%);
+            padding: 50px;
+            border-radius: 20px;
+            box-shadow: 0 0 50px rgba(26, 77, 109, 0.8);
+            text-align: center;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-title {
+            font-size: 3rem;
+            color: #fff;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            font-weight: 900;
+            letter-spacing: 3px;
+        }
+
+        .modal-subtitle {
+            font-size: 1.2rem;
+            color: #b8d4e6;
+            margin-bottom: 30px;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+        }
+
+        .modal input {
+            width: 350px;
+            padding: 15px;
+            font-size: 1.2rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            text-align: center;
+            font-family: 'Cinzel', serif;
+            margin-bottom: 20px;
+        }
+
+        .modal input:focus {
+            outline: none;
+            border-color: #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        .modal button {
+            padding: 15px 60px;
+            font-size: 1.2rem;
+            background: linear-gradient(135deg, #fff 0%, #d4e8f5 100%);
+            color: #1a4d6d;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Cinzel', serif;
+            font-weight: 700;
+            transition: all 0.3s;
+            box-shadow: 0 5px 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .modal button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 255, 255, 0.5);
+        }
+
+        /* UI */
+        .game-ui {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            color: white;
+            font-size: 1.5rem;
+            z-index: 100;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            font-weight: 700;
+        }
+
+        .game-ui div {
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .leaderboard {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            color: white;
+            font-size: 1rem;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            min-width: 250px;
+        }
+
+        .leaderboard h3 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            text-align: center;
+            color: #b8d4e6;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .leaderboard-item {
+            padding: 8px 10px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .leaderboard-item.rank-1 {
+            background: linear-gradient(135deg, #ffd700 20%, rgba(255, 215, 0, 0.3));
+            color: #000;
+            font-weight: 900;
+        }
+
+        .leaderboard-item.rank-2 {
+            background: linear-gradient(135deg, #c0c0c0 20%, rgba(192, 192, 192, 0.3));
+        }
+
+        .leaderboard-item.rank-3 {
+            background: linear-gradient(135deg, #cd7f32 20%, rgba(205, 127, 50, 0.3));
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 1.2rem;
+            z-index: 100;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px 30px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        /* 게임오버 모달 */
+        .gameover-modal {
+            background: linear-gradient(135deg, #2a5f7e 0%, #1a3d5d 100%);
+        }
+
+        .success-modal {
+            background: linear-gradient(135deg, #2d8659 0%, #1a5f3d 100%);
+        }
+
+        .final-message {
+            font-size: 2rem;
+            color: #fff;
+            margin: 20px 0;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            line-height: 1.6;
+        }
+
+        .quote {
+            font-size: 1.2rem;
+            color: #b8d4e6;
+            margin-top: 20px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- UI -->
+    <div class="game-ui">
+        <div>🎬 Player: <span id="playerName">-</span></div>
+        <div>📏 Distance: <span id="distance">0</span>m</div>
+        <div>❤️ Lives: <span id="lives">3</span></div>
+    </div>
+
+    <div class="leaderboard">
+        <h3>🏆 HALL OF FAME</h3>
+        <div id="leaderboardList"></div>
+    </div>
+
+    <div class="controls">
+        ⌨️ PRESS SPACEBAR TO JUMP
+    </div>
+
+    <!-- 닉네임 입력 모달 -->
+    <div class="modal" id="nicknameModal">
+        <div class="modal-content">
+            <div class="modal-title">THE TRUMAN SHOW</div>
+            <div class="modal-subtitle">"In case I don't see you... Good afternoon, good evening, and good night."</div>
+            <input type="text" id="nicknameInput" placeholder="Enter your name..." maxlength="15">
+            <button onclick="startGame()">START ESCAPE</button>
+        </div>
+    </div>
+
+    <!-- 게임오버 모달 -->
+    <div class="modal hidden gameover-modal" id="gameoverModal">
+        <div class="modal-content">
+            <div class="modal-title">🎬 CAUGHT!</div>
+            <div class="final-message">
+                The world was watching...<br>
+                But you couldn't escape.
+            </div>
+            <div style="font-size: 2rem; margin: 20px 0;">
+                📏 Distance: <span id="finalDistance">0</span>m
+            </div>
+            <div class="quote">"We accept the reality of the world with which we are presented."</div>
+            <button onclick="location.reload()">TRY AGAIN</button>
+        </div>
+    </div>
+
+    <!-- 성공 모달 -->
+    <div class="modal hidden success-modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-title">🚪 FREEDOM!</div>
+            <div class="final-message">
+                You found the exit...<br>
+                The door to the real world!
+            </div>
+            <div style="font-size: 2rem; margin: 20px 0;">
+                📏 Distance: <span id="successDistance">0</span>m
+            </div>
+            <div class="quote">"In case I don't see you... Good afternoon, good evening, and good night!"</div>
+            <button onclick="location.reload()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        // 게임 변수
+        let playerName = '';
+        let distance = 0;
+        let lives = 3;
+        let gameOver = false;
+        let gameStarted = false;
+        let gameWon = false;
+        
+        const GOAL_DISTANCE = 500; // 500m 도달하면 성공
+        const CLIMB_SPEED = 2; // 계단 오르는 속도
+
+        // 배경 이미지
+        const bgImages = [];
+        let bgLoaded = 0;
+        
+        for (let i = 1; i <= 3; i++) {
+            const img = new Image();
+            img.src = `truman-bg${i}.webp`;
+            img.onload = () => {
+                bgLoaded++;
+            };
+            bgImages.push(img);
+        }
+
+        // 플레이어
+        const player = {
+            x: width / 4,
+            y: height - 150,
+            width: 40,
+            height: 60,
+            velocityY: 0,
+            isJumping: false,
+            jumpPower: -15,
+            gravity: 0.6
+        };
+
+        // 계단
+        const stairs = [];
+        const STAIR_WIDTH = 80;
+        const STAIR_HEIGHT = 20;
+        const STAIR_GAP = 60;
+
+        function createStairs() {
+            stairs.length = 0;
+            for (let i = 0; i < 20; i++) {
+                stairs.push({
+                    x: i * STAIR_GAP,
+                    y: height - 100 - (i * 30),
+                    width: STAIR_WIDTH,
+                    height: STAIR_HEIGHT
+                });
+            }
+        }
+
+        createStairs();
+
+        // 장애물
+        class Obstacle {
+            constructor(type) {
+                this.type = type; // 'camera', 'light', 'box'
+                this.x = width + Math.random() * 200;
+                this.y = Math.random() * (height - 300);
+                this.width = 50;
+                this.height = 50;
+                this.speed = 3 + Math.random() * 2;
+                this.rotation = Math.random() * Math.PI * 2;
+                this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+            }
+
+            update() {
+                this.x -= this.speed;
+                this.y += this.speed * 0.5; // 아래로 떨어지면서
+                this.rotation += this.rotationSpeed;
+                
+                return this.x + this.width > 0 && this.y < height;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+                ctx.rotate(this.rotation);
+
+                if (this.type === 'camera') {
+                    // 카메라
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(-25, -20, 50, 40);
+                    ctx.fillStyle = '#555';
+                    ctx.fillRect(10, -10, 20, 20);
+                    ctx.fillStyle = '#1a4d6d';
+                    ctx.beginPath();
+                    ctx.arc(30, 0, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 📹 이모지
+                    ctx.font = '30px Arial';
+                    ctx.fillText('📹', -15, 10);
+                    
+                } else if (this.type === 'light') {
+                    // 조명
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(0, -15, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(-5, -15, 10, 30);
+                    
+                    // 💡 이모지
+                    ctx.font = '25px Arial';
+                    ctx.fillText('💡', -12, -20);
+                    
+                } else if (this.type === 'box') {
+                    // 박스
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(-25, -25, 50, 50);
+                    ctx.strokeStyle = '#654321';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(-25, -25, 50, 50);
+                    
+                    // 📦 이모지
+                    ctx.font = '30px Arial';
+                    ctx.fillText('📦', -15, 10);
+                }
+
+                // 그림자
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+
+                ctx.restore();
+            }
+
+            collidesWith(player) {
+                return player.x < this.x + this.width &&
+                       player.x + player.width > this.x &&
+                       player.y < this.y + this.height &&
+                       player.y + player.height > this.y;
+            }
+        }
+
+        let obstacles = [];
+        let obstacleSpawnTimer = 0;
+
+        function spawnObstacle() {
+            const types = ['camera', 'light', 'box'];
+            const randomType = types[Math.floor(Math.random() * types.length)];
+            obstacles.push(new Obstacle(randomType));
+        }
+
+        // 파티클 효과
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 5;
+                this.vy = (Math.random() - 0.5) * 5 - 2;
+                this.life = 1;
+                this.color = color;
+                this.size = 3 + Math.random() * 5;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2;
+                this.life -= 0.02;
+                return this.life > 0;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        let particles = [];
+
+        function createParticles(x, y, color, count = 20) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        // 키보드 입력
+        let keys = {};
+        
+        window.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            
+            if (e.code === 'Space' && !player.isJumping && gameStarted && !gameOver && !gameWon) {
+                player.velocityY = player.jumpPower;
+                player.isJumping = true;
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        // 게임 시작
+        function startGame() {
+            const input = document.getElementById('nicknameInput');
+            const nickname = input.value.trim();
+            
+            if (nickname === '') {
+                alert('Please enter your name!');
+                return;
+            }
+            
+            playerName = nickname;
+            document.getElementById('playerName').textContent = playerName;
+            document.getElementById('nicknameModal').classList.add('hidden');
+            gameStarted = true;
+            loadLeaderboard();
+        }
+
+        // 리더보드 관리
+        function loadLeaderboard() {
+            const leaderboard = JSON.parse(localStorage.getItem('trumanLeaderboard') || '[]');
+            displayLeaderboard(leaderboard);
+        }
+
+        function saveScore() {
+            const leaderboard = JSON.parse(localStorage.getItem('trumanLeaderboard') || '[]');
+            
+            leaderboard.push({
+                name: playerName,
+                distance: Math.floor(distance)
+            });
+
+            leaderboard.sort((a, b) => b.distance - a.distance);
+            leaderboard.splice(10); // 상위 10개만 유지
+
+            localStorage.setItem('trumanLeaderboard', JSON.stringify(leaderboard));
+            displayLeaderboard(leaderboard);
+        }
+
+        function displayLeaderboard(leaderboard) {
+            const list = document.getElementById('leaderboardList');
+            list.innerHTML = '';
+
+            if (leaderboard.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #888;">No records yet</div>';
+                return;
+            }
+
+            leaderboard.forEach((entry, index) => {
+                const item = document.createElement('div');
+                item.className = `leaderboard-item rank-${index + 1}`;
+                item.innerHTML = `
+                    <span>${index + 1}. ${entry.name}</span>
+                    <span>${entry.distance}m</span>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // 게임오버
+        function endGame() {
+            gameOver = true;
+            saveScore();
+            document.getElementById('finalDistance').textContent = Math.floor(distance);
+            document.getElementById('gameoverModal').classList.remove('hidden');
+        }
+
+        // 게임 승리
+        function winGame() {
+            gameWon = true;
+            saveScore();
+            document.getElementById('successDistance').textContent = Math.floor(distance);
+            document.getElementById('successModal').classList.remove('hidden');
+        }
+
+        // 배경 그리기
+        function drawBackground() {
+            // 그라데이션 배경
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, '#4a90a4');
+            gradient.addColorStop(0.5, '#6fa8ba');
+            gradient.addColorStop(1, '#2a5f7e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            // 배경 이미지 (흐릿하게)
+            if (bgLoaded > 0) {
+                ctx.save();
+                ctx.globalAlpha = 0.2;
+                const bgIndex = Math.floor(distance / 200) % bgImages.length;
+                const img = bgImages[bgIndex];
+                if (img.complete) {
+                    ctx.drawImage(img, 0, 0, width, height);
+                }
+                ctx.restore();
+            }
+
+            // 벽 텍스처
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < height; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, i - (distance * 2) % 50);
+                ctx.lineTo(width, i - (distance * 2) % 50);
+                ctx.stroke();
+            }
+
+            // 목표 표시 (출구가 가까워지면)
+            if (distance > GOAL_DISTANCE - 100) {
+                const doorY = height - (GOAL_DISTANCE - distance) * 5;
+                if (doorY < height) {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.shadowBlur = 30;
+                    ctx.shadowColor = '#fff';
+                    
+                    // 문 그리기
+                    ctx.fillRect(width / 2 - 60, doorY - 150, 120, 150);
+                    ctx.fillStyle = '#1a4d6d';
+                    ctx.fillRect(width / 2 - 50, doorY - 140, 100, 130);
+                    
+                    // 문 손잡이
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(width / 2 + 30, doorY - 75, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.font = '20px Cinzel';
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('EXIT', width / 2, doorY - 160);
+                    
+                    ctx.restore();
+                }
+            }
+        }
+
+        // 계단 그리기
+        function drawStairs() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 3;
+
+            stairs.forEach(stair => {
+                const drawY = stair.y + distance * 2;
+                if (drawY > -50 && drawY < height + 50) {
+                    ctx.fillRect(stair.x, drawY, stair.width, stair.height);
+                    ctx.strokeRect(stair.x, drawY, stair.width, stair.height);
+                }
+            });
+        }
+
+        // 플레이어 그리기
+        function drawPlayer() {
+            ctx.save();
+            
+            // 그림자
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.ellipse(player.x + player.width / 2, player.y + player.height + 5, 20, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 플레이어 (간단한 사람 모양)
+            ctx.fillStyle = '#fff';
+            
+            // 머리
+            ctx.beginPath();
+            ctx.arc(player.x + player.width / 2, player.y + 15, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 몸
+            ctx.fillRect(player.x + player.width / 2 - 8, player.y + 25, 16, 25);
+            
+            // 다리
+            const legOffset = player.isJumping ? 0 : Math.sin(Date.now() * 0.01) * 3;
+            ctx.fillRect(player.x + player.width / 2 - 10, player.y + 48, 6, 12);
+            ctx.fillRect(player.x + player.width / 2 + 4, player.y + 48 + legOffset, 6, 12 - legOffset);
+            
+            // 팔
+            ctx.fillRect(player.x + player.width / 2 - 15, player.y + 28, 6, 15);
+            ctx.fillRect(player.x + player.width / 2 + 9, player.y + 28, 6, 15);
+
+            // 테두리
+            ctx.strokeStyle = '#1a4d6d';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(player.x + player.width / 2, player.y + 15, 12, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.strokeRect(player.x + player.width / 2 - 8, player.y + 25, 16, 25);
+
+            ctx.restore();
+        }
+
+        // 업데이트
+        function update() {
+            if (!gameStarted || gameOver || gameWon) return;
+
+            // 플레이어 점프
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+
+            // 바닥 체크
+            if (player.y >= height - 150) {
+                player.y = height - 150;
+                player.velocityY = 0;
+                player.isJumping = false;
+            }
+
+            // 거리 증가 (계단 오르기)
+            distance += CLIMB_SPEED;
+            document.getElementById('distance').textContent = Math.floor(distance);
+
+            // 목표 도달
+            if (distance >= GOAL_DISTANCE) {
+                winGame();
+                return;
+            }
+
+            // 장애물 생성
+            obstacleSpawnTimer++;
+            const spawnRate = Math.max(30, 60 - Math.floor(distance / 20));
+            if (obstacleSpawnTimer > spawnRate) {
+                spawnObstacle();
+                obstacleSpawnTimer = 0;
+            }
+
+            // 장애물 업데이트
+            obstacles = obstacles.filter(obstacle => {
+                const alive = obstacle.update();
+                
+                if (obstacle.collidesWith(player)) {
+                    lives--;
+                    document.getElementById('lives').textContent = lives;
+                    createParticles(player.x + player.width / 2, player.y + player.height / 2, '#ff0000', 30);
+                    
+                    if (lives <= 0) {
+                        endGame();
+                    }
+                    
+                    return false;
+                }
+                
+                return alive;
+            });
+
+            // 파티클 업데이트
+            particles = particles.filter(p => p.update());
+        }
+
+        // 그리기
+        function draw() {
+            // 배경
+            drawBackground();
+
+            // 계단
+            drawStairs();
+
+            // 플레이어
+            drawPlayer();
+
+            // 장애물
+            obstacles.forEach(obstacle => obstacle.draw());
+
+            // 파티클
+            particles.forEach(p => p.draw());
+
+            // 진행도 바
+            const progress = (distance / GOAL_DISTANCE) * 100;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fillRect(width / 2 - 200, 20, 400, 30);
+            ctx.fillStyle = '#2d8659';
+            ctx.fillRect(width / 2 - 195, 25, (390 * progress / 100), 20);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(width / 2 - 200, 20, 400, 30);
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Cinzel';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${Math.floor(progress)}%`, width / 2, 40);
+        }
+
+        // 애니메이션 루프
+        function animate() {
+            update();
+            draw();
+            requestAnimationFrame(animate);
+        }
+
+        // 리사이즈
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Enter 키
+        document.getElementById('nicknameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') startGame();
+        });
+
+        // 시작
+        animate();
+    </script>
+</body>
+</html>
