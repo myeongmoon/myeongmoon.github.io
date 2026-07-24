@@ -296,7 +296,8 @@
         let gameWon = false;
         
         const TOTAL_OBSTACLES = 50;
-        const GAME_SPEED = 3;
+        const SCROLL_SPEED = 3; // 배경 스크롤 속도
+        let cameraX = 0; // 카메라 X 위치
 
         // 배경 이미지
         const bgImages = [];
@@ -311,77 +312,66 @@
             bgImages.push(img);
         }
 
-        // 플레이어 (화면 하단 중앙, 뒤에서 앞으로 올라옴)
+        // 플레이어 (화면 왼쪽 1/3 지점에 고정)
         const player = {
-            x: width / 2 - 20,
-            y: height - 150,
-            z: 0, // 깊이 (0에 가까울수록 앞)
+            x: width / 3,
+            y: height - 200,
             width: 40,
             height: 60,
             velocityY: 0,
             isJumping: false,
-            jumpPower: -18,
-            gravity: 0.8,
+            jumpPower: -15,
+            gravity: 0.6,
             frameCount: 0,
-            legPhase: 0,
-            scale: 1 // 원근감용 스케일
+            legPhase: 0
         };
 
-        // 계단 (원근감 있는 3D 계단)
+        // 계단 (대각선으로 올라가는 플랫폼)
         let stairs = [];
-        const STAIR_DEPTH = 80;
-        let stairProgress = 0;
+        const STAIR_WIDTH = 150;
+        const STAIR_HEIGHT = 20;
+        const STAIR_X_GAP = 120; // 가로 간격
+        const STAIR_Y_GAP = -60; // 세로 간격 (음수 = 위로)
 
         function createStairs() {
             stairs = [];
-            for (let i = 0; i < 40; i++) {
+            // 대각선으로 올라가는 계단 생성
+            for (let i = 0; i < 100; i++) {
                 stairs.push({
-                    depth: i,
-                    passed: false
+                    x: i * STAIR_X_GAP,
+                    y: height - 150 + (i * STAIR_Y_GAP),
+                    width: STAIR_WIDTH,
+                    height: STAIR_HEIGHT
                 });
             }
         }
 
         createStairs();
 
-        // 계단의 화면상 위치 계산
-        function getStairScreenPos(depth) {
-            const z = depth * STAIR_DEPTH - stairProgress;
-            
-            // 원근법
-            const perspective = 500;
-            const scale = Math.max(0.1, perspective / (perspective + z));
-            
-            // Y 위치
-            const vanishingY = height * 0.3;
-            const y = vanishingY + z * 0.5;
-            
-            // 너비
-            const baseWidth = 400;
-            const stairWidth = baseWidth * scale;
-            
-            return {
-                y: y,
-                width: stairWidth,
-                height: 20 * scale,
-                scale: scale,
-                z: z
-            };
-        }
-
         // 장애물 (계단 위에 배치)
         class Obstacle {
-            constructor(type, stairDepth) {
+            constructor(type, stairIndex) {
                 this.type = type;
-                this.stairDepth = stairDepth; // 어느 계단에 있는지
+                this.stairIndex = stairIndex;
                 this.passed = false;
             }
 
+            getPosition() {
+                const stair = stairs[this.stairIndex];
+                return {
+                    x: stair.x + stair.width / 2 - 25,
+                    y: stair.y - 50,
+                    width: 50,
+                    height: 50
+                };
+            }
+
             update() {
-                // 플레이어가 이 장애물을 지나쳤는지 (뒤로 지나갔는지)
-                const z = this.stairDepth * STAIR_DEPTH - stairProgress;
+                const pos = this.getPosition();
+                const screenX = pos.x - cameraX;
                 
-                if (!this.passed && z < -50) {
+                // 플레이어를 지나쳤는지 체크
+                if (!this.passed && screenX < player.x - 100) {
                     this.passed = true;
                     obstaclesPassed++;
                     document.getElementById('obstacles').textContent = obstaclesPassed;
@@ -391,85 +381,65 @@
                     }
                 }
                 
-                // 화면 뒤쪽으로 나가면 제거
-                return z > -200;
-            }
-
-            getScreenPos() {
-                const z = this.stairDepth * STAIR_DEPTH - stairProgress;
-                const stairPos = getStairScreenPos(this.stairDepth);
-                
-                return {
-                    x: width / 2,
-                    y: stairPos.y - 30 * stairPos.scale,
-                    scale: stairPos.scale,
-                    z: z
-                };
+                // 화면 밖으로 나가면 제거
+                return screenX > -200;
             }
 
             draw() {
-                const pos = this.getScreenPos();
+                const pos = this.getPosition();
+                const screenX = pos.x - cameraX;
                 
-                // 화면에 보이는 것만 그리기
-                if (pos.y < -100 || pos.y > height + 100) return;
+                // 화면에 보이는 것만
+                if (screenX < -100 || screenX > width + 100) return;
                 
                 ctx.save();
-                ctx.translate(pos.x, pos.y);
-                
-                const size = 50 * pos.scale;
+                ctx.translate(screenX + 25, pos.y + 25);
 
                 if (this.type === 'camera') {
                     ctx.fillStyle = '#333';
-                    ctx.fillRect(-size/2, -size*0.4, size, size*0.8);
+                    ctx.fillRect(-25, -20, 50, 40);
                     ctx.fillStyle = '#555';
-                    ctx.fillRect(size*0.2, -size*0.2, size*0.4, size*0.4);
+                    ctx.fillRect(10, -10, 20, 20);
                     ctx.fillStyle = '#1a4d6d';
                     ctx.beginPath();
-                    ctx.arc(size*0.6, 0, size*0.24, 0, Math.PI * 2);
+                    ctx.arc(30, 0, 12, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.font = `${30 * pos.scale}px Arial`;
-                    ctx.fillText('📹', -size*0.3, size*0.2);
+                    ctx.font = '30px Arial';
+                    ctx.fillText('📹', -15, 10);
                     
                 } else if (this.type === 'light') {
                     ctx.fillStyle = '#ffd700';
                     ctx.beginPath();
-                    ctx.arc(0, -size*0.3, size*0.3, 0, Math.PI * 2);
+                    ctx.arc(0, -15, 15, 0, Math.PI * 2);
                     ctx.fill();
                     ctx.fillStyle = '#333';
-                    ctx.fillRect(-size*0.1, -size*0.3, size*0.2, size*0.6);
-                    ctx.font = `${25 * pos.scale}px Arial`;
-                    ctx.fillText('💡', -size*0.24, -size*0.4);
+                    ctx.fillRect(-5, -15, 10, 30);
+                    ctx.font = '25px Arial';
+                    ctx.fillText('💡', -12, -20);
                     
                 } else if (this.type === 'box') {
                     ctx.fillStyle = '#8B4513';
-                    ctx.fillRect(-size/2, -size/2, size, size);
+                    ctx.fillRect(-25, -25, 50, 50);
                     ctx.strokeStyle = '#654321';
-                    ctx.lineWidth = 3 * pos.scale;
-                    ctx.strokeRect(-size/2, -size/2, size, size);
-                    ctx.font = `${30 * pos.scale}px Arial`;
-                    ctx.fillText('📦', -size*0.3, size*0.2);
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(-25, -25, 50, 50);
+                    ctx.font = '30px Arial';
+                    ctx.fillText('📦', -15, 10);
                 }
 
-                ctx.shadowBlur = 10 * pos.scale;
+                ctx.shadowBlur = 10;
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
                 ctx.restore();
             }
 
             collidesWith(player) {
-                const pos = this.getScreenPos();
+                const pos = this.getPosition();
+                const screenX = pos.x - cameraX;
                 
-                // z값 체크 - 플레이어 근처에 있을 때만 충돌
-                const z = this.stairDepth * STAIR_DEPTH - stairProgress;
-                if (z < -100 || z > 100) return false;
-                
-                const size = 40 * pos.scale;
-                
-                // 박스 충돌 체크
-                const dx = Math.abs((player.x + player.width / 2) - pos.x);
-                const dy = Math.abs((player.y + player.height / 2) - pos.y);
-                
-                return dx < (size / 2 + player.width / 2) && 
-                       dy < (size / 2 + player.height / 2);
+                return player.x < screenX + pos.width &&
+                       player.x + player.width > screenX &&
+                       player.y < pos.y + pos.height &&
+                       player.y + player.height > pos.y;
             }
         }
 
@@ -482,8 +452,8 @@
             
             for (let i = 0; i < TOTAL_OBSTACLES; i++) {
                 const randomType = types[Math.floor(Math.random() * types.length)];
-                const stairDepth = 10 + (i * 3); // 10번째 계단부터 3칸 간격
-                obstacles.push(new Obstacle(randomType, stairDepth));
+                const stairIndex = 5 + (i * 2); // 5번째 계단부터 2칸 간격
+                obstacles.push(new Obstacle(randomType, stairIndex));
             }
         }
 
@@ -623,7 +593,7 @@
 
         // 배경 그리기
         function drawBackground() {
-            // 그라데이션 배경 (하늘 돔)
+            // 그라데이션 배경
             const gradient = ctx.createLinearGradient(0, 0, 0, height);
             gradient.addColorStop(0, '#6fa8ba');
             gradient.addColorStop(0.5, '#4a90a4');
@@ -631,133 +601,105 @@
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, height);
 
-            // 배경 이미지 (트루먼쇼 이미지)
+            // 배경 이미지
             if (bgLoaded > 0) {
                 ctx.save();
                 ctx.globalAlpha = 0.2;
                 const bgIndex = Math.floor(obstaclesPassed / 20) % bgImages.length;
                 const img = bgImages[bgIndex];
                 if (img.complete) {
-                    ctx.drawImage(img, 0, 0, width, height);
+                    ctx.drawImage(img, -cameraX * 0.3, 0, width + 200, height);
                 }
                 ctx.restore();
             }
 
-            // 출구 표시 (거의 다 통과하면)
+            // 구름 효과
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            for (let i = 0; i < 10; i++) {
+                const x = (i * 300 - cameraX * 0.5) % (width + 300);
+                const y = 50 + i * 40;
+                ctx.beginPath();
+                ctx.ellipse(x, y, 60, 30, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 출구 표시
             if (obstaclesPassed >= TOTAL_OBSTACLES - 5) {
                 const doorProgress = (obstaclesPassed - (TOTAL_OBSTACLES - 5)) / 5;
-                const doorScale = 0.5 + doorProgress * 0.5;
-                const doorY = height * 0.15;
+                const lastStair = stairs[stairs.length - 1];
+                const doorX = lastStair.x + lastStair.width / 2 - cameraX;
+                const doorY = lastStair.y - 200;
                 
-                ctx.save();
-                ctx.translate(width / 2, doorY);
-                ctx.scale(doorScale, doorScale);
-                
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                ctx.shadowBlur = 40;
-                ctx.shadowColor = '#fff';
-                
-                // 문 그리기
-                ctx.fillRect(-60, 0, 120, 150);
-                ctx.fillStyle = '#1a4d6d';
-                ctx.fillRect(-50, 10, 100, 130);
-                
-                // 문 손잡이
-                ctx.fillStyle = '#ffd700';
-                ctx.beginPath();
-                ctx.arc(30, 75, 8, 0, Math.PI * 2);
-                ctx.fill();
-                
-                ctx.font = '24px Cinzel';
-                ctx.fillStyle = '#fff';
-                ctx.textAlign = 'center';
-                ctx.fillText('EXIT', 0, -15);
-                
-                ctx.restore();
-            }
-        }
-
-        // 계단 그리기 (3D 원근감)
-        function drawStairs() {
-            // 뒤에서 앞으로 그리기
-            for (let i = stairs.length - 1; i >= 0; i--) {
-                const stair = stairs[i];
-                const pos = getStairScreenPos(stair.depth);
-                
-                // 화면에 보이는 것만
-                if (pos.z < -200 || pos.z > 800) continue;
-                if (pos.y < -100 || pos.y > height + 100) continue;
-                
-                const x = width / 2;
-                const w = pos.width;
-                const h = pos.height;
-                
-                // 계단 윗면
-                ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.9, 0.5 + pos.scale * 0.5)})`;
-                ctx.strokeStyle = `rgba(200, 200, 200, ${0.7})`;
-                ctx.lineWidth = 2;
-                
-                ctx.beginPath();
-                ctx.moveTo(x - w/2, pos.y);
-                ctx.lineTo(x + w/2, pos.y);
-                ctx.lineTo(x + w/2, pos.y + h);
-                ctx.lineTo(x - w/2, pos.y + h);
-                ctx.closePath();
-                ctx.fill();
-                ctx.stroke();
-                
-                // 계단 앞면 (입체감)
-                if (i > 0) {
-                    const prevPos = getStairScreenPos(stairs[i - 1].depth);
-                    if (prevPos.y < height) {
-                        ctx.fillStyle = `rgba(220, 220, 220, ${Math.min(0.8, 0.4 + pos.scale * 0.5)})`;
-                        
-                        ctx.beginPath();
-                        ctx.moveTo(x - w/2, pos.y + h);
-                        ctx.lineTo(x + w/2, pos.y + h);
-                        ctx.lineTo(x + prevPos.width/2, prevPos.y);
-                        ctx.lineTo(x - prevPos.width/2, prevPos.y);
-                        ctx.closePath();
-                        ctx.fill();
-                    }
+                if (doorX > -200 && doorX < width + 200) {
+                    ctx.save();
+                    ctx.translate(doorX, doorY);
+                    ctx.scale(0.8 + doorProgress * 0.4, 0.8 + doorProgress * 0.4);
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.shadowBlur = 40;
+                    ctx.shadowColor = '#fff';
+                    
+                    ctx.fillRect(-60, 0, 120, 150);
+                    ctx.fillStyle = '#1a4d6d';
+                    ctx.fillRect(-50, 10, 100, 130);
+                    
+                    ctx.fillStyle = '#ffd700';
+                    ctx.beginPath();
+                    ctx.arc(30, 75, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    ctx.font = '24px Cinzel';
+                    ctx.fillStyle = '#fff';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('EXIT', 0, -15);
+                    
+                    ctx.restore();
                 }
             }
-            
-            // 난간 (양쪽)
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.lineWidth = 5;
-            
-            // 왼쪽 난간
-            ctx.beginPath();
-            for (let i = stairs.length - 1; i >= 0; i--) {
-                const pos = getStairScreenPos(stairs[i].depth);
-                if (pos.z < -200 || pos.z > 800) continue;
-                const x = width / 2 - pos.width / 2;
-                if (i === stairs.length - 1) ctx.moveTo(x, pos.y);
-                else ctx.lineTo(x, pos.y);
-            }
-            ctx.stroke();
-            
-            // 오른쪽 난간
-            ctx.beginPath();
-            for (let i = stairs.length - 1; i >= 0; i--) {
-                const pos = getStairScreenPos(stairs[i].depth);
-                if (pos.z < -200 || pos.z > 800) continue;
-                const x = width / 2 + pos.width / 2;
-                if (i === stairs.length - 1) ctx.moveTo(x, pos.y);
-                else ctx.lineTo(x, pos.y);
-            }
-            ctx.stroke();
         }
 
-        // 플레이어 그리기 (뒤에서 본 모습)
+        // 계단 그리기 (2D 플랫폼)
+        function drawStairs() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.strokeStyle = 'rgba(200, 200, 200, 0.8)';
+            ctx.lineWidth = 3;
+
+            stairs.forEach(stair => {
+                const screenX = stair.x - cameraX;
+                
+                // 화면에 보이는 것만
+                if (screenX < -200 || screenX > width + 200) return;
+                
+                // 계단 윗면
+                ctx.fillRect(screenX, stair.y, stair.width, stair.height);
+                ctx.strokeRect(screenX, stair.y, stair.width, stair.height);
+                
+                // 계단 앞면 (입체감)
+                ctx.fillStyle = 'rgba(230, 230, 230, 0.9)';
+                ctx.fillRect(screenX, stair.y + stair.height, stair.width, 10);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                
+                // 계단 테두리 강조
+                ctx.strokeStyle = 'rgba(150, 150, 150, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(screenX, stair.y);
+                ctx.lineTo(screenX + stair.width, stair.y);
+                ctx.stroke();
+                
+                ctx.strokeStyle = 'rgba(200, 200, 200, 0.8)';
+                ctx.lineWidth = 3;
+            });
+        }
+
+        // 플레이어 그리기 (측면)
         function drawPlayer() {
             ctx.save();
             
             // 계단 오르기 애니메이션
             if (!player.isJumping) {
                 player.frameCount++;
-                player.legPhase = Math.sin(player.frameCount * 0.2) * 8;
+                player.legPhase = Math.sin(player.frameCount * 0.2) * 6;
             } else {
                 player.legPhase = 0;
             }
@@ -768,53 +710,42 @@
             // 그림자
             ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             ctx.beginPath();
-            ctx.ellipse(px, py + player.height + 5, 25, 8, 0, 0, Math.PI * 2);
+            ctx.ellipse(px, py + player.height + 3, 20, 6, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // 플레이어 (뒤에서 본 모습)
+            // 플레이어 (옆모습)
             ctx.fillStyle = '#fff';
             ctx.strokeStyle = '#1a4d6d';
             ctx.lineWidth = 2;
             
-            // 머리 (뒤통수)
+            // 머리
             ctx.beginPath();
-            ctx.arc(px, py + 15, 13, 0, Math.PI * 2);
+            ctx.arc(px, py + 12, 12, 0, Math.PI * 2);
             ctx.fill();
             ctx.stroke();
             
             // 몸통
-            ctx.fillRect(px - 10, py + 26, 20, 28);
-            ctx.strokeRect(px - 10, py + 26, 20, 28);
+            ctx.fillRect(px - 8, py + 22, 16, 26);
+            ctx.strokeRect(px - 8, py + 22, 16, 26);
             
-            // 어깨
-            ctx.fillRect(px - 15, py + 26, 30, 8);
-            ctx.strokeRect(px - 15, py + 26, 30, 8);
-            
-            // 다리 (계단 오르기 동작)
+            // 다리
             if (!player.isJumping) {
-                // 왼쪽 다리
-                ctx.fillRect(px - 12, py + 52 + player.legPhase, 8, 14 - Math.abs(player.legPhase));
-                ctx.strokeRect(px - 12, py + 52 + player.legPhase, 8, 14 - Math.abs(player.legPhase));
-                
-                // 오른쪽 다리
-                ctx.fillRect(px + 4, py + 52 - player.legPhase, 8, 14 - Math.abs(player.legPhase));
-                ctx.strokeRect(px + 4, py + 52 - player.legPhase, 8, 14 - Math.abs(player.legPhase));
+                ctx.fillRect(px - 10, py + 46 + player.legPhase, 8, 14 - Math.abs(player.legPhase));
+                ctx.strokeRect(px - 10, py + 46 + player.legPhase, 8, 14 - Math.abs(player.legPhase));
+                ctx.fillRect(px + 2, py + 46 - player.legPhase, 8, 14 - Math.abs(player.legPhase));
+                ctx.strokeRect(px + 2, py + 46 - player.legPhase, 8, 14 - Math.abs(player.legPhase));
             } else {
-                // 점프 중 - 다리 모음
-                ctx.fillRect(px - 12, py + 52, 8, 12);
-                ctx.strokeRect(px - 12, py + 52, 8, 12);
-                ctx.fillRect(px + 4, py + 52, 8, 12);
-                ctx.strokeRect(px + 4, py + 52, 8, 12);
+                ctx.fillRect(px - 10, py + 46, 8, 12);
+                ctx.strokeRect(px - 10, py + 46, 8, 12);
+                ctx.fillRect(px + 2, py + 46, 8, 12);
+                ctx.strokeRect(px + 2, py + 46, 8, 12);
             }
             
-            // 팔 (뒤에서 보면 양쪽으로 흔들림)
-            // 왼팔
-            ctx.fillRect(px - 20, py + 32 - player.legPhase * 0.5, 6, 16);
-            ctx.strokeRect(px - 20, py + 32 - player.legPhase * 0.5, 6, 16);
-            
-            // 오른팔
-            ctx.fillRect(px + 14, py + 32 + player.legPhase * 0.5, 6, 16);
-            ctx.strokeRect(px + 14, py + 32 + player.legPhase * 0.5, 6, 16);
+            // 팔
+            ctx.fillRect(px - 14, py + 26 - player.legPhase * 0.3, 6, 14);
+            ctx.strokeRect(px - 14, py + 26 - player.legPhase * 0.3, 6, 14);
+            ctx.fillRect(px + 8, py + 26 + player.legPhase * 0.3, 6, 14);
+            ctx.strokeRect(px + 8, py + 26 + player.legPhase * 0.3, 6, 14);
 
             ctx.restore();
         }
@@ -823,26 +754,37 @@
         function update() {
             if (!gameStarted || gameOver || gameWon) return;
 
-            // 계단 진행
-            stairProgress += GAME_SPEED;
-            
-            // 계단 재사용
-            stairs.forEach(stair => {
-                const z = stair.depth * STAIR_DEPTH - stairProgress;
-                if (z < -200) {
-                    stair.depth += stairs.length;
-                }
-            });
+            // 카메라 스크롤 (우측으로)
+            cameraX += SCROLL_SPEED;
 
             // 플레이어 점프 물리
             player.velocityY += player.gravity;
             player.y += player.velocityY;
 
-            // 바닥 체크
-            if (player.y >= height - 150) {
-                player.y = height - 150;
-                player.velocityY = 0;
-                player.isJumping = false;
+            // 계단과 충돌 체크
+            let onStair = false;
+            stairs.forEach(stair => {
+                const screenX = stair.x - cameraX;
+                
+                // 플레이어가 계단 위에 있는지
+                if (player.x + player.width > screenX &&
+                    player.x < screenX + stair.width &&
+                    player.y + player.height >= stair.y &&
+                    player.y + player.height <= stair.y + stair.height + 15 &&
+                    player.velocityY >= 0) {
+                    
+                    player.y = stair.y - player.height;
+                    player.velocityY = 0;
+                    player.isJumping = false;
+                    onStair = true;
+                }
+            });
+
+            // 화면 아래로 떨어지면 게임오버
+            if (player.y > height) {
+                lives = 0;
+                document.getElementById('lives').textContent = lives;
+                endGame();
             }
 
             // 장애물 업데이트
@@ -855,7 +797,6 @@
                     document.getElementById('lives').textContent = lives;
                     createParticles(player.x + player.width / 2, player.y + player.height / 2, '#ff0000', 30);
                     
-                    // 장애물 강제 통과 처리
                     obstacle.passed = true;
                     obstaclesPassed++;
                     document.getElementById('obstacles').textContent = obstaclesPassed;
@@ -879,15 +820,10 @@
             // 배경
             drawBackground();
 
-            // 계단 (3D)
+            // 계단
             drawStairs();
 
-            // 장애물 (뒤에서 앞으로 정렬)
-            obstacles.sort((a, b) => {
-                const zA = a.stairDepth * STAIR_DEPTH - stairProgress;
-                const zB = b.stairDepth * STAIR_DEPTH - stairProgress;
-                return zB - zA; // 멀리 있는 것부터 그리기
-            });
+            // 장애물
             obstacles.forEach(obstacle => obstacle.draw());
 
             // 플레이어
