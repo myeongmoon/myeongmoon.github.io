@@ -295,8 +295,8 @@
         let gameStarted = false;
         let gameWon = false;
         
-        const TOTAL_OBSTACLES = 50; // 50개 장애물 통과하면 성공
-        const GAME_SPEED = 5; // 게임 속도
+        const TOTAL_OBSTACLES = 50;
+        const GAME_SPEED = 3;
 
         // 배경 이미지
         const bgImages = [];
@@ -327,17 +327,16 @@
             scale: 1 // 원근감용 스케일
         };
 
-        // 계단 (원근감 있는 3D 계단 - 프론트 뷰)
+        // 계단 (원근감 있는 3D 계단)
         let stairs = [];
-        const STAIR_DEPTH = 60; // 계단 깊이 간격
-        let stairProgress = 0; // 계단 진행도
+        const STAIR_DEPTH = 80;
+        let stairProgress = 0;
 
         function createStairs() {
             stairs = [];
-            // 뒤(작게)에서 앞(크게)으로 계단 생성
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 40; i++) {
                 stairs.push({
-                    depth: i, // 깊이 인덱스
+                    depth: i,
                     passed: false
                 });
             }
@@ -345,25 +344,26 @@
 
         createStairs();
 
-        // 계단의 화면상 위치 계산 (원근법)
+        // 계단의 화면상 위치 계산
         function getStairScreenPos(depth) {
             const z = depth * STAIR_DEPTH - stairProgress;
             
-            // 원근법: 멀수록 작고 위쪽, 가까울수록 크고 아래쪽
-            const perspective = 800;
-            const scale = perspective / (perspective + z);
+            // 원근법
+            const perspective = 500;
+            const scale = Math.max(0.1, perspective / (perspective + z));
             
-            // Y 위치 (멀수록 화면 위쪽)
-            const y = height / 2 - z * 0.8;
+            // Y 위치
+            const vanishingY = height * 0.3;
+            const y = vanishingY + z * 0.5;
             
-            // 너비 (멀수록 좁아짐)
-            const baseWidth = 300;
+            // 너비
+            const baseWidth = 400;
             const stairWidth = baseWidth * scale;
             
             return {
                 y: y,
                 width: stairWidth,
-                height: 15 * scale,
+                height: 20 * scale,
                 scale: scale,
                 z: z
             };
@@ -457,14 +457,19 @@
 
             collidesWith(player) {
                 const pos = this.getScreenPos();
-                const size = 50 * pos.scale;
                 
-                // 간단한 원형 충돌 체크
-                const dx = (player.x + player.width / 2) - pos.x;
-                const dy = (player.y + player.height / 2) - pos.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+                // z값 체크 - 플레이어 근처에 있을 때만 충돌
+                const z = this.stairDepth * STAIR_DEPTH - stairProgress;
+                if (z < -100 || z > 100) return false;
                 
-                return distance < (size / 2 + 20);
+                const size = 40 * pos.scale;
+                
+                // 박스 충돌 체크
+                const dx = Math.abs((player.x + player.width / 2) - pos.x);
+                const dy = Math.abs((player.y + player.height / 2) - pos.y);
+                
+                return dx < (size / 2 + player.width / 2) && 
+                       dy < (size / 2 + player.height / 2);
             }
         }
 
@@ -477,7 +482,7 @@
             
             for (let i = 0; i < TOTAL_OBSTACLES; i++) {
                 const randomType = types[Math.floor(Math.random() * types.length)];
-                const stairDepth = 5 + (i * 2); // 5번째 계단부터 2칸 간격
+                const stairDepth = 10 + (i * 3); // 10번째 계단부터 3칸 간격
                 obstacles.push(new Obstacle(randomType, stairDepth));
             }
         }
@@ -672,14 +677,15 @@
             }
         }
 
-        // 계단 그리기 (3D 원근감 - 프론트 뷰)
+        // 계단 그리기 (3D 원근감)
         function drawStairs() {
-            // 뒤에서 앞으로 그리기 (원근감)
+            // 뒤에서 앞으로 그리기
             for (let i = stairs.length - 1; i >= 0; i--) {
                 const stair = stairs[i];
                 const pos = getStairScreenPos(stair.depth);
                 
                 // 화면에 보이는 것만
+                if (pos.z < -200 || pos.z > 800) continue;
                 if (pos.y < -100 || pos.y > height + 100) continue;
                 
                 const x = width / 2;
@@ -687,8 +693,8 @@
                 const h = pos.height;
                 
                 // 계단 윗면
-                ctx.fillStyle = `rgba(255, 255, 255, ${0.85 * pos.scale})`;
-                ctx.strokeStyle = `rgba(200, 200, 200, ${0.7 * pos.scale})`;
+                ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(0.9, 0.5 + pos.scale * 0.5)})`;
+                ctx.strokeStyle = `rgba(200, 200, 200, ${0.7})`;
                 ctx.lineWidth = 2;
                 
                 ctx.beginPath();
@@ -701,48 +707,44 @@
                 ctx.stroke();
                 
                 // 계단 앞면 (입체감)
-                if (i < stairs.length - 1) {
-                    const nextPos = getStairScreenPos(stairs[i + 1].depth);
-                    ctx.fillStyle = `rgba(220, 220, 220, ${0.7 * pos.scale})`;
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(x - w/2, pos.y + h);
-                    ctx.lineTo(x + w/2, pos.y + h);
-                    ctx.lineTo(x + nextPos.width/2, nextPos.y);
-                    ctx.lineTo(x - nextPos.width/2, nextPos.y);
-                    ctx.closePath();
-                    ctx.fill();
+                if (i > 0) {
+                    const prevPos = getStairScreenPos(stairs[i - 1].depth);
+                    if (prevPos.y < height) {
+                        ctx.fillStyle = `rgba(220, 220, 220, ${Math.min(0.8, 0.4 + pos.scale * 0.5)})`;
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(x - w/2, pos.y + h);
+                        ctx.lineTo(x + w/2, pos.y + h);
+                        ctx.lineTo(x + prevPos.width/2, prevPos.y);
+                        ctx.lineTo(x - prevPos.width/2, prevPos.y);
+                        ctx.closePath();
+                        ctx.fill();
+                    }
                 }
-                
-                // 계단 선 (디테일)
-                ctx.strokeStyle = `rgba(180, 180, 180, ${0.4 * pos.scale})`;
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(x - w/2, pos.y);
-                ctx.lineTo(x + w/2, pos.y);
-                ctx.stroke();
             }
             
             // 난간 (양쪽)
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-            ctx.lineWidth = 4;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.lineWidth = 5;
             
             // 왼쪽 난간
             ctx.beginPath();
-            for (let i = 0; i < stairs.length; i++) {
+            for (let i = stairs.length - 1; i >= 0; i--) {
                 const pos = getStairScreenPos(stairs[i].depth);
+                if (pos.z < -200 || pos.z > 800) continue;
                 const x = width / 2 - pos.width / 2;
-                if (i === 0) ctx.moveTo(x, pos.y);
+                if (i === stairs.length - 1) ctx.moveTo(x, pos.y);
                 else ctx.lineTo(x, pos.y);
             }
             ctx.stroke();
             
             // 오른쪽 난간
             ctx.beginPath();
-            for (let i = 0; i < stairs.length; i++) {
+            for (let i = stairs.length - 1; i >= 0; i--) {
                 const pos = getStairScreenPos(stairs[i].depth);
+                if (pos.z < -200 || pos.z > 800) continue;
                 const x = width / 2 + pos.width / 2;
-                if (i === 0) ctx.moveTo(x, pos.y);
+                if (i === stairs.length - 1) ctx.moveTo(x, pos.y);
                 else ctx.lineTo(x, pos.y);
             }
             ctx.stroke();
@@ -821,14 +823,14 @@
         function update() {
             if (!gameStarted || gameOver || gameWon) return;
 
-            // 계단 진행 (앞으로 나아감)
+            // 계단 진행
             stairProgress += GAME_SPEED;
             
-            // 계단 재사용 (무한 루프)
+            // 계단 재사용
             stairs.forEach(stair => {
                 const z = stair.depth * STAIR_DEPTH - stairProgress;
-                if (z > 100) {
-                    stair.depth -= stairs.length;
+                if (z < -200) {
+                    stair.depth += stairs.length;
                 }
             });
 
@@ -836,7 +838,7 @@
             player.velocityY += player.gravity;
             player.y += player.velocityY;
 
-            // 바닥 체크 (계단 위에 착지)
+            // 바닥 체크
             if (player.y >= height - 150) {
                 player.y = height - 150;
                 player.velocityY = 0;
@@ -844,23 +846,28 @@
             }
 
             // 장애물 업데이트
-            obstacles = obstacles.filter(obstacle => {
-                const alive = obstacle.update();
+            obstacles.forEach(obstacle => {
+                obstacle.update();
                 
                 // 충돌 체크
-                if (obstacle.collidesWith(player)) {
+                if (!obstacle.passed && obstacle.collidesWith(player)) {
                     lives--;
                     document.getElementById('lives').textContent = lives;
                     createParticles(player.x + player.width / 2, player.y + player.height / 2, '#ff0000', 30);
+                    
+                    // 장애물 강제 통과 처리
+                    obstacle.passed = true;
+                    obstaclesPassed++;
+                    document.getElementById('obstacles').textContent = obstaclesPassed;
                     
                     if (lives <= 0) {
                         endGame();
                     }
                     
-                    return false;
+                    if (obstaclesPassed >= TOTAL_OBSTACLES) {
+                        winGame();
+                    }
                 }
-                
-                return alive;
             });
 
             // 파티클 업데이트
