@@ -225,7 +225,7 @@
     <!-- UI -->
     <div class="game-ui">
         <div>🎬 Player: <span id="playerName">-</span></div>
-        <div>📏 Distance: <span id="distance">0</span>m</div>
+        <div>🏃 Cleared: <span id="obstacles">0</span>/<span id="totalObstacles">50</span></div>
         <div>❤️ Lives: <span id="lives">3</span></div>
     </div>
 
@@ -257,7 +257,7 @@
                 But you couldn't escape.
             </div>
             <div style="font-size: 2rem; margin: 20px 0;">
-                📏 Distance: <span id="finalDistance">0</span>m
+                🏃 Cleared: <span id="finalObstacles">0</span>/50
             </div>
             <div class="quote">"We accept the reality of the world with which we are presented."</div>
             <button onclick="location.reload()">TRY AGAIN</button>
@@ -273,7 +273,7 @@
                 The door to the real world!
             </div>
             <div style="font-size: 2rem; margin: 20px 0;">
-                📏 Distance: <span id="successDistance">0</span>m
+                🏃 Cleared: <span id="successObstacles">0</span>/50
             </div>
             <div class="quote">"In case I don't see you... Good afternoon, good evening, and good night!"</div>
             <button onclick="location.reload()">PLAY AGAIN</button>
@@ -289,14 +289,14 @@
 
         // 게임 변수
         let playerName = '';
-        let distance = 0;
+        let obstaclesPassed = 0;
         let lives = 3;
         let gameOver = false;
         let gameStarted = false;
         let gameWon = false;
         
-        const GOAL_DISTANCE = 500; // 500m 도달하면 성공
-        const CLIMB_SPEED = 2; // 계단 오르는 속도
+        const TOTAL_OBSTACLES = 50; // 50개 장애물 통과하면 성공
+        const GAME_SPEED = 5; // 게임 속도
 
         // 배경 이미지
         const bgImages = [];
@@ -313,61 +313,56 @@
 
         // 플레이어
         const player = {
-            x: width / 4,
-            y: height - 150,
+            x: 150,
+            y: height - 200,
             width: 40,
             height: 60,
             velocityY: 0,
             isJumping: false,
-            jumpPower: -15,
-            gravity: 0.6
+            jumpPower: -18,
+            gravity: 0.8,
+            groundY: height - 200,
+            frameCount: 0, // 달리기 애니메이션용
+            legPhase: 0
         };
 
-        // 계단
-        const stairs = [];
-        const STAIR_WIDTH = 80;
-        const STAIR_HEIGHT = 20;
-        const STAIR_GAP = 60;
-
-        function createStairs() {
-            stairs.length = 0;
-            for (let i = 0; i < 20; i++) {
-                stairs.push({
-                    x: i * STAIR_GAP,
-                    y: height - 100 - (i * 30),
-                    width: STAIR_WIDTH,
-                    height: STAIR_HEIGHT
-                });
-            }
-        }
-
-        createStairs();
+        // 계단 (고정된 위치)
+        const stairY = height - 140; // 계단 높이
+        const STAIR_HEIGHT = 30;
 
         // 장애물
         class Obstacle {
-            constructor(type) {
+            constructor(type, x) {
                 this.type = type; // 'camera', 'light', 'box'
-                this.x = width + Math.random() * 200;
-                this.y = Math.random() * (height - 300);
+                this.x = x;
+                this.y = stairY - 50; // 계단 위에 배치
                 this.width = 50;
                 this.height = 50;
-                this.speed = 3 + Math.random() * 2;
-                this.rotation = Math.random() * Math.PI * 2;
-                this.rotationSpeed = (Math.random() - 0.5) * 0.2;
+                this.speed = GAME_SPEED;
+                this.passed = false; // 지나쳤는지 체크
             }
 
             update() {
                 this.x -= this.speed;
-                this.y += this.speed * 0.5; // 아래로 떨어지면서
-                this.rotation += this.rotationSpeed;
                 
-                return this.x + this.width > 0 && this.y < height;
+                // 플레이어를 지나쳤는지 체크
+                if (!this.passed && this.x + this.width < player.x) {
+                    this.passed = true;
+                    obstaclesPassed++;
+                    document.getElementById('obstacles').textContent = obstaclesPassed;
+                    
+                    // 50개 통과하면 승리!
+                    if (obstaclesPassed >= TOTAL_OBSTACLES) {
+                        winGame();
+                    }
+                }
+                
+                return this.x + this.width > -100; // 화면 밖으로 나가면 제거
             }
 
             draw() {
                 ctx.save();
                 ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
-                ctx.rotate(this.rotation);
 
                 if (this.type === 'camera') {
                     // 카메라
@@ -410,7 +405,6 @@
                     ctx.fillText('📦', -15, 10);
                 }
 
-                // 그림자
                 ctx.shadowBlur = 10;
                 ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
 
@@ -428,10 +422,17 @@
         let obstacles = [];
         let obstacleSpawnTimer = 0;
 
-        function spawnObstacle() {
+        // 50개의 장애물을 미리 생성
+        function createAllObstacles() {
+            obstacles = [];
             const types = ['camera', 'light', 'box'];
-            const randomType = types[Math.floor(Math.random() * types.length)];
-            obstacles.push(new Obstacle(randomType));
+            
+            for (let i = 0; i < TOTAL_OBSTACLES; i++) {
+                const randomType = types[Math.floor(Math.random() * types.length)];
+                const spacing = 250 + Math.random() * 200; // 장애물 간격
+                const x = width + (i * spacing);
+                obstacles.push(new Obstacle(randomType, x));
+            }
         }
 
         // 파티클 효과
@@ -504,6 +505,10 @@
             document.getElementById('playerName').textContent = playerName;
             document.getElementById('nicknameModal').classList.add('hidden');
             gameStarted = true;
+            
+            // 50개 장애물 생성
+            createAllObstacles();
+            
             loadLeaderboard();
         }
 
@@ -518,10 +523,10 @@
             
             leaderboard.push({
                 name: playerName,
-                distance: Math.floor(distance)
+                obstacles: obstaclesPassed
             });
 
-            leaderboard.sort((a, b) => b.distance - a.distance);
+            leaderboard.sort((a, b) => b.obstacles - a.obstacles);
             leaderboard.splice(10); // 상위 10개만 유지
 
             localStorage.setItem('trumanLeaderboard', JSON.stringify(leaderboard));
@@ -542,7 +547,7 @@
                 item.className = `leaderboard-item rank-${index + 1}`;
                 item.innerHTML = `
                     <span>${index + 1}. ${entry.name}</span>
-                    <span>${entry.distance}m</span>
+                    <span>${entry.obstacles}/${TOTAL_OBSTACLES}</span>
                 `;
                 list.appendChild(item);
             });
@@ -552,7 +557,7 @@
         function endGame() {
             gameOver = true;
             saveScore();
-            document.getElementById('finalDistance').textContent = Math.floor(distance);
+            document.getElementById('finalObstacles').textContent = obstaclesPassed;
             document.getElementById('gameoverModal').classList.remove('hidden');
         }
 
@@ -560,7 +565,7 @@
         function winGame() {
             gameWon = true;
             saveScore();
-            document.getElementById('successDistance').textContent = Math.floor(distance);
+            document.getElementById('successObstacles').textContent = obstaclesPassed;
             document.getElementById('successModal').classList.remove('hidden');
         }
 
@@ -577,8 +582,8 @@
             // 배경 이미지 (흐릿하게)
             if (bgLoaded > 0) {
                 ctx.save();
-                ctx.globalAlpha = 0.2;
-                const bgIndex = Math.floor(distance / 200) % bgImages.length;
+                ctx.globalAlpha = 0.15;
+                const bgIndex = Math.floor(obstaclesPassed / 20) % bgImages.length;
                 const img = bgImages[bgIndex];
                 if (img.complete) {
                     ctx.drawImage(img, 0, 0, width, height);
@@ -586,59 +591,66 @@
                 ctx.restore();
             }
 
-            // 벽 텍스처
+            // 벽 텍스처 (수직선)
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
             ctx.lineWidth = 2;
-            for (let i = 0; i < height; i += 50) {
+            for (let i = 0; i < width; i += 100) {
                 ctx.beginPath();
-                ctx.moveTo(0, i - (distance * 2) % 50);
-                ctx.lineTo(width, i - (distance * 2) % 50);
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, height);
                 ctx.stroke();
             }
 
-            // 목표 표시 (출구가 가까워지면)
-            if (distance > GOAL_DISTANCE - 100) {
-                const doorY = height - (GOAL_DISTANCE - distance) * 5;
-                if (doorY < height) {
-                    ctx.save();
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-                    ctx.shadowBlur = 30;
-                    ctx.shadowColor = '#fff';
-                    
-                    // 문 그리기
-                    ctx.fillRect(width / 2 - 60, doorY - 150, 120, 150);
-                    ctx.fillStyle = '#1a4d6d';
-                    ctx.fillRect(width / 2 - 50, doorY - 140, 100, 130);
-                    
-                    // 문 손잡이
-                    ctx.fillStyle = '#ffd700';
-                    ctx.beginPath();
-                    ctx.arc(width / 2 + 30, doorY - 75, 8, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    ctx.font = '20px Cinzel';
-                    ctx.fillStyle = '#fff';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('EXIT', width / 2, doorY - 160);
-                    
-                    ctx.restore();
-                }
+            // 출구 표시 (거의 다 통과하면)
+            if (obstaclesPassed >= TOTAL_OBSTACLES - 5) {
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.shadowBlur = 30;
+                ctx.shadowColor = '#fff';
+                
+                const doorX = width - 200;
+                const doorY = stairY - 200;
+                
+                // 문 그리기
+                ctx.fillRect(doorX - 60, doorY, 120, 150);
+                ctx.fillStyle = '#1a4d6d';
+                ctx.fillRect(doorX - 50, doorY + 10, 100, 130);
+                
+                // 문 손잡이
+                ctx.fillStyle = '#ffd700';
+                ctx.beginPath();
+                ctx.arc(doorX + 30, doorY + 75, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.font = '20px Cinzel';
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.fillText('EXIT', doorX, doorY - 10);
+                
+                ctx.restore();
             }
         }
 
         // 계단 그리기
         function drawStairs() {
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            // 계단 플랫폼
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.strokeStyle = 'rgba(200, 200, 200, 0.8)';
             ctx.lineWidth = 3;
-
-            stairs.forEach(stair => {
-                const drawY = stair.y + distance * 2;
-                if (drawY > -50 && drawY < height + 50) {
-                    ctx.fillRect(stair.x, drawY, stair.width, stair.height);
-                    ctx.strokeRect(stair.x, drawY, stair.width, stair.height);
-                }
-            });
+            
+            // 메인 계단 플랫폼
+            ctx.fillRect(0, stairY, width, STAIR_HEIGHT);
+            ctx.strokeRect(0, stairY, width, STAIR_HEIGHT);
+            
+            // 계단 디테일 (계단 줄무늬)
+            ctx.strokeStyle = 'rgba(150, 150, 150, 0.3)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < width; i += 80) {
+                ctx.beginPath();
+                ctx.moveTo(i, stairY);
+                ctx.lineTo(i, stairY + STAIR_HEIGHT);
+                ctx.stroke();
+            }
         }
 
         // 플레이어 그리기
@@ -648,36 +660,54 @@
             // 그림자
             ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             ctx.beginPath();
-            ctx.ellipse(player.x + player.width / 2, player.y + player.height + 5, 20, 5, 0, 0, Math.PI * 2);
+            ctx.ellipse(player.x + player.width / 2, stairY, 20, 5, 0, 0, Math.PI * 2);
             ctx.fill();
 
             // 플레이어 (간단한 사람 모양)
             ctx.fillStyle = '#fff';
+            ctx.strokeStyle = '#1a4d6d';
+            ctx.lineWidth = 2;
+            
+            // 달리기 애니메이션
+            if (!player.isJumping) {
+                player.frameCount++;
+                player.legPhase = Math.sin(player.frameCount * 0.2) * 8;
+            } else {
+                player.legPhase = 0;
+            }
             
             // 머리
             ctx.beginPath();
             ctx.arc(player.x + player.width / 2, player.y + 15, 12, 0, Math.PI * 2);
             ctx.fill();
+            ctx.stroke();
             
             // 몸
             ctx.fillRect(player.x + player.width / 2 - 8, player.y + 25, 16, 25);
-            
-            // 다리
-            const legOffset = player.isJumping ? 0 : Math.sin(Date.now() * 0.01) * 3;
-            ctx.fillRect(player.x + player.width / 2 - 10, player.y + 48, 6, 12);
-            ctx.fillRect(player.x + player.width / 2 + 4, player.y + 48 + legOffset, 6, 12 - legOffset);
-            
-            // 팔
-            ctx.fillRect(player.x + player.width / 2 - 15, player.y + 28, 6, 15);
-            ctx.fillRect(player.x + player.width / 2 + 9, player.y + 28, 6, 15);
-
-            // 테두리
-            ctx.strokeStyle = '#1a4d6d';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(player.x + player.width / 2, player.y + 15, 12, 0, Math.PI * 2);
-            ctx.stroke();
             ctx.strokeRect(player.x + player.width / 2 - 8, player.y + 25, 16, 25);
+            
+            // 다리 (달리기 동작)
+            if (!player.isJumping) {
+                // 왼쪽 다리
+                ctx.fillRect(player.x + player.width / 2 - 10, player.y + 48 + player.legPhase, 6, 12 - Math.abs(player.legPhase));
+                ctx.strokeRect(player.x + player.width / 2 - 10, player.y + 48 + player.legPhase, 6, 12 - Math.abs(player.legPhase));
+                
+                // 오른쪽 다리
+                ctx.fillRect(player.x + player.width / 2 + 4, player.y + 48 - player.legPhase, 6, 12 - Math.abs(player.legPhase));
+                ctx.strokeRect(player.x + player.width / 2 + 4, player.y + 48 - player.legPhase, 6, 12 - Math.abs(player.legPhase));
+            } else {
+                // 점프 중에는 다리 모음
+                ctx.fillRect(player.x + player.width / 2 - 10, player.y + 48, 6, 10);
+                ctx.strokeRect(player.x + player.width / 2 - 10, player.y + 48, 6, 10);
+                ctx.fillRect(player.x + player.width / 2 + 4, player.y + 48, 6, 10);
+                ctx.strokeRect(player.x + player.width / 2 + 4, player.y + 48, 6, 10);
+            }
+            
+            // 팔 (달리기 동작 - 다리와 반대)
+            ctx.fillRect(player.x + player.width / 2 - 15, player.y + 28 - player.legPhase * 0.5, 6, 15);
+            ctx.strokeRect(player.x + player.width / 2 - 15, player.y + 28 - player.legPhase * 0.5, 6, 15);
+            ctx.fillRect(player.x + player.width / 2 + 9, player.y + 28 + player.legPhase * 0.5, 6, 15);
+            ctx.strokeRect(player.x + player.width / 2 + 9, player.y + 28 + player.legPhase * 0.5, 6, 15);
 
             ctx.restore();
         }
@@ -686,39 +716,22 @@
         function update() {
             if (!gameStarted || gameOver || gameWon) return;
 
-            // 플레이어 점프
+            // 플레이어 점프 물리
             player.velocityY += player.gravity;
             player.y += player.velocityY;
 
-            // 바닥 체크
-            if (player.y >= height - 150) {
-                player.y = height - 150;
+            // 바닥(계단) 체크
+            if (player.y >= player.groundY) {
+                player.y = player.groundY;
                 player.velocityY = 0;
                 player.isJumping = false;
-            }
-
-            // 거리 증가 (계단 오르기)
-            distance += CLIMB_SPEED;
-            document.getElementById('distance').textContent = Math.floor(distance);
-
-            // 목표 도달
-            if (distance >= GOAL_DISTANCE) {
-                winGame();
-                return;
-            }
-
-            // 장애물 생성
-            obstacleSpawnTimer++;
-            const spawnRate = Math.max(30, 60 - Math.floor(distance / 20));
-            if (obstacleSpawnTimer > spawnRate) {
-                spawnObstacle();
-                obstacleSpawnTimer = 0;
             }
 
             // 장애물 업데이트
             obstacles = obstacles.filter(obstacle => {
                 const alive = obstacle.update();
                 
+                // 충돌 체크
                 if (obstacle.collidesWith(player)) {
                     lives--;
                     document.getElementById('lives').textContent = lives;
@@ -728,7 +741,7 @@
                         endGame();
                     }
                     
-                    return false;
+                    return false; // 충돌한 장애물 제거
                 }
                 
                 return alive;
@@ -746,17 +759,17 @@
             // 계단
             drawStairs();
 
-            // 플레이어
-            drawPlayer();
-
             // 장애물
             obstacles.forEach(obstacle => obstacle.draw());
+
+            // 플레이어
+            drawPlayer();
 
             // 파티클
             particles.forEach(p => p.draw());
 
             // 진행도 바
-            const progress = (distance / GOAL_DISTANCE) * 100;
+            const progress = (obstaclesPassed / TOTAL_OBSTACLES) * 100;
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(width / 2 - 200, 20, 400, 30);
             ctx.fillStyle = '#2d8659';
@@ -768,7 +781,7 @@
             ctx.fillStyle = '#fff';
             ctx.font = '14px Cinzel';
             ctx.textAlign = 'center';
-            ctx.fillText(`${Math.floor(progress)}%`, width / 2, 40);
+            ctx.fillText(`${obstaclesPassed}/${TOTAL_OBSTACLES} (${Math.floor(progress)}%)`, width / 2, 40);
         }
 
         // 애니메이션 루프
