@@ -210,8 +210,10 @@
             });
         }
         
-        // 마지막 계단 (출구용 플랫폼)
-        const exitStair = stairs[stairs.length - 1];
+        // 마지막 장애물이 있는 계단 기준으로 출구 배치
+        const lastObstacleStairIndex = 4 + (49 * 2); // 102번째 계단
+        const exitStairIndex = Math.min(lastObstacleStairIndex + 3, stairs.length - 1); // 3칸 뒤
+        const exitStair = stairs[exitStairIndex];
         const exitDoor = {
             x: exitStair.x + exitStair.width / 2 - 60,
             y: exitStair.y - 180,
