@@ -378,10 +378,10 @@
             }
 
             update() {
-                // 플레이어가 이 장애물을 지나쳤는지 (앞으로 나왔는지)
+                // 플레이어가 이 장애물을 지나쳤는지 (뒤로 지나갔는지)
                 const z = this.stairDepth * STAIR_DEPTH - stairProgress;
                 
-                if (!this.passed && z > 50) {
+                if (!this.passed && z < -50) {
                     this.passed = true;
                     obstaclesPassed++;
                     document.getElementById('obstacles').textContent = obstaclesPassed;
@@ -391,8 +391,8 @@
                     }
                 }
                 
-                // 화면 앞쪽으로 나가면 제거
-                return z < 200;
+                // 화면 뒤쪽으로 나가면 제거
+                return z > -200;
             }
 
             getScreenPos() {
