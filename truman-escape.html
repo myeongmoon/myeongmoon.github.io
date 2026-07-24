@@ -177,7 +177,7 @@
             height: 60,
             velocityY: 0,
             jumping: false,
-            speed: 5
+            speed: 3  // 5 → 3 (느리게)
         };
         
         // 계단들
@@ -198,9 +198,9 @@
         // 장애물들
         const obstacles = [];
         
-        // 50개 장애물 생성
+        // 50개 장애물 생성 (간격 넓게)
         for (let i = 0; i < 50; i++) {
-            const stairIndex = 3 + (i * 1); // 3번째 계단부터 1칸씩
+            const stairIndex = 4 + (i * 2); // 4번째 계단부터 2칸씩 (더 넓은 간격)
             if (stairs[stairIndex]) {
                 const types = ['📹', '💡', '📦'];
                 obstacles.push({
@@ -223,7 +223,7 @@
         window.addEventListener('keydown', (e) => {
             keys[e.code] = true;
             if (e.code === 'Space' && !player.jumping && gameStarted) {
-                player.velocityY = -16;
+                player.velocityY = -18;  // -16 → -18 (더 높이 점프)
                 player.jumping = true;
                 e.preventDefault();
             }
@@ -258,7 +258,7 @@
             if (!gameStarted || gameOver) return;
             
             // 중력
-            player.velocityY += 0.6;
+            player.velocityY += 0.5;  // 0.6 → 0.5 (더 천천히 떨어짐)
             player.y += player.velocityY;
             
             // 계단 충돌
