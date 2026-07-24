@@ -124,6 +124,25 @@
         <div>❤️ <span id="lives">3</span></div>
     </div>
 
+    <div class="leaderboard" id="leaderboard" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 15px;
+        border-radius: 10px;
+        color: white;
+        min-width: 220px;
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 100;
+    ">
+        <h3 style="margin: 0 0 15px 0; font-size: 1.2rem; text-align: center; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 10px;">
+            🏆 LEADERBOARD
+        </h3>
+        <div id="leaderboardList" style="font-size: 0.9rem;"></div>
+    </div>
+
     <div class="controls">⌨️ SPACEBAR to JUMP</div>
 
     <div class="modal" id="startModal">
@@ -168,6 +187,8 @@
         let gameOver = false;
         let cleared = 0;
         let lives = 3;
+        let startTime = 0;
+        let playerName = '';
         
         // 배경 이미지
         const bgImages = [];
@@ -267,9 +288,12 @@
                 alert('Please enter your name!');
                 return;
             }
+            playerName = name;
             document.getElementById('playerName').textContent = name;
             document.getElementById('startModal').classList.add('hidden');
             gameStarted = true;
+            startTime = Date.now();
+            loadLeaderboard();
         }
         
         // 충돌 체크
@@ -326,6 +350,7 @@
                     
                     if (lives <= 0) {
                         gameOver = true;
+                        endGame();
                         document.getElementById('finalCleared').textContent = cleared;
                         document.getElementById('gameoverModal').classList.remove('hidden');
                     }
@@ -353,6 +378,7 @@
             if (player.worldY > canvas.height + 500) {
                 lives = 0;
                 gameOver = true;
+                endGame();
                 document.getElementById('finalCleared').textContent = cleared;
                 document.getElementById('gameoverModal').classList.remove('hidden');
             }
@@ -369,6 +395,7 @@
                 player.worldY < exitDoor.y + exitDoor.height) {
                 
                 gameOver = true;
+                winGame();
                 document.getElementById('winModal').classList.remove('hidden');
             }
         }
@@ -530,6 +557,84 @@
             ctx.strokeRect(px + 6, py + 28, 6, 14);
             ctx.fillRect(px + 28, py + 28, 6, 14);
             ctx.strokeRect(px + 28, py + 28, 6, 14);
+        }
+        
+        // 랭킹 시스템
+        function loadLeaderboard() {
+            const scores = JSON.parse(localStorage.getItem('trumanEscapeScores') || '[]');
+            displayLeaderboard(scores);
+        }
+        
+        function saveScore(name, cleared, time) {
+            const scores = JSON.parse(localStorage.getItem('trumanEscapeScores') || '[]');
+            scores.push({
+                name: name,
+                cleared: cleared,
+                time: time,
+                date: new Date().toISOString()
+            });
+            
+            // 정렬: cleared 내림차순, 같으면 time 오름차순
+            scores.sort((a, b) => {
+                if (b.cleared !== a.cleared) {
+                    return b.cleared - a.cleared;
+                }
+                return a.time - b.time;
+            });
+            
+            // 상위 10개만 저장
+            const top10 = scores.slice(0, 10);
+            localStorage.setItem('trumanEscapeScores', JSON.stringify(top10));
+            displayLeaderboard(top10);
+        }
+        
+        function displayLeaderboard(scores) {
+            const list = document.getElementById('leaderboardList');
+            if (scores.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 20px;">No records yet</div>';
+                return;
+            }
+            
+            list.innerHTML = scores.map((score, index) => {
+                const rankStyle = index === 0 ? 'color: #FFD700; font-weight: bold;' :
+                                 index === 1 ? 'color: #C0C0C0; font-weight: bold;' :
+                                 index === 2 ? 'color: #CD7F32; font-weight: bold;' : '';
+                
+                const timeStr = formatTime(score.time);
+                const rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                
+                return `
+                    <div style="margin: 8px 0; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 5px; ${rankStyle}">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: bold;">${rankIcon} ${score.name}</span>
+                        </div>
+                        <div style="font-size: 0.85rem; margin-top: 4px; opacity: 0.8;">
+                            🏃 ${score.cleared}/50 | ⏱️ ${timeStr}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function formatTime(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return minutes > 0 ? `${minutes}m ${secs}s` : `${secs}s`;
+        }
+        
+        function endGame() {
+            if (playerName && startTime > 0) {
+                const playTime = Date.now() - startTime;
+                saveScore(playerName, cleared, playTime);
+            }
+        }
+        
+        function winGame() {
+            if (playerName && startTime > 0) {
+                const playTime = Date.now() - startTime;
+                saveScore(playerName, cleared, playTime);
+            }
         }
         
         // 게임 루프
