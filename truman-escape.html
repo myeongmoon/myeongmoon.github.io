@@ -217,6 +217,7 @@
         
         // 카메라
         let cameraX = 0;
+        let cameraY = 0;  // Y축 카메라 추가
         
         // 키보드
         let keys = {};
@@ -266,21 +267,28 @@
             stairs.forEach(stair => {
                 if (checkCollision(player, {
                     x: stair.x - cameraX,
-                    y: stair.y,
+                    y: stair.y - cameraY,  // Y축 카메라 적용
                     width: stair.width,
                     height: stair.height
                 }) && player.velocityY >= 0) {
-                    player.y = stair.y - player.height;
+                    player.y = stair.y - cameraY - player.height;  // Y축 카메라 적용
                     player.velocityY = 0;
                     player.jumping = false;
                     onGround = true;
                 }
             });
             
-            // 카메라 이동 (플레이어가 화면 중앙보다 오른쪽에 있으면)
+            // 카메라 X축 이동 (플레이어가 화면 중앙보다 오른쪽에 있으면)
             if (player.x > canvas.width / 3) {
                 cameraX += player.speed;
                 player.x -= player.speed;
+            }
+            
+            // 카메라 Y축 이동 (플레이어가 화면 중앙보다 위에 있으면)
+            if (player.y < canvas.height / 2) {
+                const diff = canvas.height / 2 - player.y;
+                cameraY += diff * 0.1;  // 부드럽게 따라감
+                player.y += diff * 0.1;
             }
             
             // 계속 앞으로 이동
@@ -289,11 +297,12 @@
             // 장애물 체크
             obstacles.forEach(obs => {
                 const obsScreenX = obs.x - cameraX;
+                const obsScreenY = obs.y - cameraY;  // Y축 카메라 적용
                 
                 // 충돌 체크
                 if (!obs.hit && checkCollision(player, {
                     x: obsScreenX,
-                    y: obs.y,
+                    y: obsScreenY,  // Y축 카메라 적용
                     width: obs.width,
                     height: obs.height
                 })) {
@@ -309,7 +318,7 @@
                 }
                 
                 // 통과 체크
-                if (!obs.passed && player.x > obs.x + obs.width) {
+                if (!obs.passed && player.x > obsScreenX + obs.width) {  // 화면상 X 좌표로 비교
                     obs.passed = true;
                     cleared++;
                     document.getElementById('cleared').textContent = cleared;
@@ -343,18 +352,20 @@
             
             stairs.forEach(stair => {
                 const x = stair.x - cameraX;
-                if (x > -300 && x < canvas.width + 100) {
-                    ctx.fillRect(x, stair.y, stair.width, stair.height);
-                    ctx.strokeRect(x, stair.y, stair.width, stair.height);
+                const y = stair.y - cameraY;  // Y축 카메라 적용
+                if (x > -300 && x < canvas.width + 100 && y > -100 && y < canvas.height + 100) {
+                    ctx.fillRect(x, y, stair.width, stair.height);
+                    ctx.strokeRect(x, y, stair.width, stair.height);
                 }
             });
             
             // 장애물 그리기
             obstacles.forEach(obs => {
                 const x = obs.x - cameraX;
-                if (x > -100 && x < canvas.width + 100 && !obs.hit) {
+                const y = obs.y - cameraY;  // Y축 카메라 적용
+                if (x > -100 && x < canvas.width + 100 && y > -100 && y < canvas.height + 100 && !obs.hit) {
                     ctx.font = '40px Arial';
-                    ctx.fillText(obs.type, x, obs.y + 40);
+                    ctx.fillText(obs.type, x, y + 40);
                 }
             });
             
