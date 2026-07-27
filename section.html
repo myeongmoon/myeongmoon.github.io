@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECTION - Archive of Cross-Sections</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Playfair+Display:wght@700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0D0D0E;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --accent: #E3FF00;
+            --text-white: #FFFFFF;
+            --text-gray: #A0A0A0;
+            --glass-bg: rgba(26, 26, 28, 0.8);
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-white);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            backdrop-filter: blur(20px);
+            background: var(--glass-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            padding: 20px 40px;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-gray);
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 10px 20px;
+            width: 300px;
+        }
+
+        .search-bar input {
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-white);
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .search-bar input::placeholder {
+            color: var(--text-gray);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 100px;
+            padding: 80px 40px;
+            text-align: center;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            line-height: 1.1;
+        }
+
+        .hero .highlight {
+            color: var(--accent);
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-gray);
+            margin-bottom: 40px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Filter Chips */
+        .filter-section {
+            padding: 30px 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .filter-chips {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .chip {
+            padding: 10px 24px;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .chip:hover, .chip.active {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        /* Grid */
+        .grid-container {
+            max-width: 1400px;
+            margin: 40px auto;
+            padding: 0 40px;
+        }
+
+        .masonry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 60px rgba(227, 255, 0, 0.2);
+            border-color: var(--accent);
+        }
+
+        .card-image-container {
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 4/5;
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease;
+        }
+
+        .card:hover .card-image {
+            transform: scale(1.1);
+        }
+
+        .slice-line {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 3px;
+            height: 100%;
+            background: var(--accent);
+            box-shadow: 0 0 20px var(--accent);
+            transition: left 0.6s ease;
+        }
+
+        .card:hover .slice-line {
+            left: 100%;
+        }
+
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-number {
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .card-tags {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 4px 12px;
+            background: rgba(227, 255, 0, 0.1);
+            color: var(--accent);
+            border-radius: 12px;
+            border: 1px solid rgba(227, 255, 0, 0.3);
+        }
+
+        .like-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .like-btn:hover {
+            background: var(--accent);
+            transform: scale(1.1);
+        }
+
+        .like-btn.liked {
+            background: var(--accent);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 40px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            max-width: 1200px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 40px;
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-white);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+        }
+
+        .modal-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .modal-image {
+            width: 100%;
+            border-radius: 12px;
+            aspect-ratio: 4/5;
+            object-fit: cover;
+        }
+
+        .modal-info h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .modal-description {
+            color: var(--text-gray);
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .color-swatch {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.2);
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 10px 40px rgba(227, 255, 0, 0.4);
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1rem;
+            z-index: 999;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 50px rgba(227, 255, 0, 0.6);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .masonry-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-split {
+                grid-template-columns: 1fr;
+            }
+
+            .search-bar {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="header-content">
+            <div>
+                <div class="logo">SECTION<span>.</span></div>
+                <div class="subtitle">단면 아카이브</div>
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="Search cross-sections..." id="searchInput">
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <h1>Archive of <span class="highlight">Hidden Interiors</span></h1>
+        <p>From Kimbap to Tree Rings: Exploring the Beauty of Cross-Sections</p>
+    </section>
+
+    <!-- Filters -->
+    <section class="filter-section">
+        <div class="filter-chips">
+            <div class="chip active" data-category="all">All</div>
+            <div class="chip" data-category="food">🍱 Food</div>
+            <div class="chip" data-category="nature">🌲 Nature</div>
+            <div class="chip" data-category="everyday">✏️ Everyday</div>
+            <div class="chip" data-category="tech">⚡ Tech</div>
+        </div>
+    </section>
+
+    <!-- Grid -->
+    <section class="grid-container">
+        <div class="masonry-grid" id="grid"></div>
+    </section>
+
+    <!-- Submit Button -->
+    <button class="submit-btn" onclick="alert('Upload feature coming soon! 📸')">
+        + Submit Your Section
+    </button>
+
+    <!-- Modal -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="close-btn" onclick="closeModal()">×</div>
+            <div class="modal-split">
+                <div>
+                    <h3 style="margin-bottom: 12px; color: var(--text-gray); font-size: 0.9rem;">Full Object</h3>
+                    <img class="modal-image" id="modalImageFull" src="" alt="">
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 12px; color: var(--text-gray); font-size: 0.9rem;">Cross-Section</h3>
+                    <img class="modal-image" id="modalImageSection" src="" alt="">
+                </div>
+            </div>
+            <div class="modal-info">
+                <h2 id="modalTitle"></h2>
+                <p class="modal-description" id="modalDescription"></p>
+                <div style="margin-top: 20px;">
+                    <strong style="color: var(--accent);">Color Palette:</strong>
+                    <div class="color-palette" id="colorPalette"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mock Data
+        const sections = [
+            {
+                id: 1,
+                number: '001',
+                title: 'Premium Kimbap',
+                category: 'food',
+                tags: ['Korean', 'Food', 'Rice'],
+                description: 'The origin of our journey: A perfectly rolled premium Kimbap revealing layers of rice, vegetables, and seaweed in harmonious circles. Each ingredient creates its own visual rhythm, from the bright yellow pickled radish to the deep green spinach.',
+                imageFull: 'https://images.unsplash.com/photo-1553621042-f6e147245754?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1553621042-f6e147245754?w=800',
+                colors: ['#F5DEB3', '#8FBC8F', '#FFD700', '#2F4F4F', '#1C1C1C']
+            },
+            {
+                id: 2,
+                number: '002',
+                title: '100-Year Oak Tree Ring',
+                category: 'nature',
+                tags: ['Nature', 'Wood', 'Time'],
+                description: 'A century of growth captured in concentric rings. Each circle represents a year of survival, drought, abundance, and change. The natural wood grain patterns create an organic mandala of time itself.',
+                imageFull: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
+                colors: ['#8B4513', '#D2691E', '#F4A460', '#CD853F', '#DEB887']
+            },
+            {
+                id: 3,
+                number: '003',
+                title: 'Handcrafted Watermelon Candy',
+                category: 'food',
+                tags: ['Candy', 'Handmade', 'Sweet'],
+                description: 'Translucent layers of sugar art mimicking a real watermelon. The pink interior contrasts with the white rind layer and green outer shell, all crafted from crystallized sugar with meticulous attention to detail.',
+                imageFull: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=800',
+                colors: ['#FF69B4', '#FFFFFF', '#90EE90', '#32CD32', '#228B22']
+            },
+            {
+                id: 4,
+                number: '004',
+                title: 'Tombow Mono Eraser',
+                category: 'everyday',
+                tags: ['Stationery', 'Design', 'Minimal'],
+                description: 'The iconic blue and white eraser reveals its dense, uniform interior structure. A study in functional design where the cross-section shows the material consistency that makes it so effective.',
+                imageFull: 'https://images.unsplash.com/photo-1587916410084-e739f1006f28?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1587916410084-e739f1006f28?w=800',
+                colors: ['#4169E1', '#FFFFFF', '#87CEEB', '#E0E0E0', '#1E90FF']
+            },
+            {
+                id: 5,
+                number: '005',
+                title: 'Submarine Cable Wire',
+                category: 'tech',
+                tags: ['Technology', 'Engineering', 'Infrastructure'],
+                description: 'Layers of copper, insulation, and protective sheathing designed to carry data across ocean floors. Each layer serves a critical function in protecting the flow of global internet communication.',
+                imageFull: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
+                colors: ['#FF6347', '#FFD700', '#4682B4', '#2F4F4F', '#708090']
+            },
+            {
+                id: 6,
+                number: '006',
+                title: 'Meteorite Fragment',
+                category: 'nature',
+                tags: ['Space', 'Mineral', 'Rare'],
+                description: 'A piece of the cosmos: metallic crystals formed billions of years ago in the heart of an asteroid. The Widmanstätten pattern visible in the cross-section can only form in the zero-gravity of space.',
+                imageFull: 'https://images.unsplash.com/photo-1614642240262-87e433d4d3f4?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1614642240262-87e433d4d3f4?w=800',
+                colors: ['#C0C0C0', '#708090', '#A9A9A9', '#2F4F4F', '#1C1C1C']
+            },
+            {
+                id: 7,
+                number: '007',
+                title: 'Rainbow Layered Cake',
+                category: 'food',
+                tags: ['Dessert', 'Colorful', 'Cake'],
+                description: 'Pure joy in edible form. Six vibrant layers of cake separated by cream frosting, creating a spectrum that delights before the first bite. Each layer is a carefully calibrated balance of flour, eggs, and color.',
+                imageFull: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800',
+                colors: ['#FF69B4', '#FFD700', '#00CED1', '#9370DB', '#FF6347']
+            },
+            {
+                id: 8,
+                number: '008',
+                title: 'Colored Pencils Bundle',
+                category: 'everyday',
+                tags: ['Art', 'Stationery', 'Color'],
+                description: 'A spectrum of creativity: tightly bundled colored pencils reveal their pigmented cores in a mesmerizing circular arrangement. Each pencil contains layers of wood, paint, and the compressed graphite-pigment core.',
+                imageFull: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=800',
+                colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF']
+            },
+            {
+                id: 9,
+                number: '009',
+                title: 'Agate Geode',
+                category: 'nature',
+                tags: ['Mineral', 'Crystal', 'Earth'],
+                description: 'Nature\'s hidden artwork: millions of years of mineral deposits create bands of color in striking patterns. Each layer represents a different chemical composition and environmental condition from deep within the Earth.',
+                imageFull: 'https://images.unsplash.com/photo-1602263364726-ba4fab5e8e0a?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1602263364726-ba4fab5e8e0a?w=800',
+                colors: ['#8B4789', '#FFB6C1', '#FFF8DC', '#4682B4', '#2F4F4F']
+            },
+            {
+                id: 10,
+                number: '010',
+                title: 'Citrus Fruit Slice',
+                category: 'food',
+                tags: ['Fresh', 'Natural', 'Vitamin'],
+                description: 'Radial perfection: the citrus fruit\'s internal architecture is a masterclass in natural geometry. Translucent segments arranged like a wheel, each pocket filled with juice vesicles that burst with flavor.',
+                imageFull: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800',
+                imageSection: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800',
+                colors: ['#FFA500', '#FFD700', '#FFFACD', '#FFFFFF', '#F0E68C']
+            }
+        ];
+
+        let currentFilter = 'all';
+        let likedItems = new Set();
+
+        // Render Grid
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            const filtered = currentFilter === 'all' 
+                ? sections 
+                : sections.filter(s => s.category === currentFilter);
+
+            grid.innerHTML = filtered.map(section => `
+                <div class="card" onclick="openModal(${section.id})">
+                    <div class="card-image-container">
+                        <img class="card-image" src="${section.imageSection}" alt="${section.title}">
+                        <div class="slice-line"></div>
+                        <div class="like-btn ${likedItems.has(section.id) ? 'liked' : ''}" 
+                             onclick="event.stopPropagation(); toggleLike(${section.id})">
+                            ${likedItems.has(section.id) ? '♥' : '♡'}
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div class="card-number">${section.number}</div>
+                        <div class="card-title">${section.title}</div>
+                        <div class="card-tags">
+                            ${section.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                currentFilter = chip.dataset.category;
+                renderGrid();
+            });
+        });
+
+        // Search
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+                const tags = card.querySelector('.card-tags').textContent.toLowerCase();
+                if (title.includes(query) || tags.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Like
+        function toggleLike(id) {
+            if (likedItems.has(id)) {
+                likedItems.delete(id);
+            } else {
+                likedItems.add(id);
+            }
+            renderGrid();
+        }
+
+        // Modal
+        function openModal(id) {
+            const section = sections.find(s => s.id === id);
+            if (!section) return;
+
+            document.getElementById('modalImageFull').src = section.imageFull;
+            document.getElementById('modalImageSection').src = section.imageSection;
+            document.getElementById('modalTitle').textContent = section.title;
+            document.getElementById('modalDescription').textContent = section.description;
+
+            const paletteContainer = document.getElementById('colorPalette');
+            paletteContainer.innerHTML = section.colors.map(color => 
+                `<div class="color-swatch" style="background: ${color};" 
+                      onclick="navigator.clipboard.writeText('${color}'); alert('Copied ${color}!')">
+                </div>`
+            ).join('');
+
+            document.getElementById('modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modal on outside click
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Initial render
+        renderGrid();
+    </script>
+</body>
+</html>
