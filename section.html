@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SECTION - Archive of Cross-Sections</title>
+    <title>김밥 아카이브 - Kimbap Archive</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Playfair+Display:wght@700;900&display=swap');
 
@@ -420,8 +420,8 @@
     <header>
         <div class="header-content">
             <div>
-                <div class="logo">SECTION<span>.</span></div>
-                <div class="subtitle">단면 아카이브</div>
+                <div class="logo">김밥<span>.</span></div>
+                <div class="subtitle">KIMBAP ARCHIVE</div>
             </div>
             <div class="search-bar">
                 <input type="text" placeholder="Search cross-sections..." id="searchInput">
@@ -431,8 +431,8 @@
 
     <!-- Hero -->
     <section class="hero">
-        <h1>Archive of <span class="highlight">Hidden Interiors</span></h1>
-        <p>From Kimbap to Tree Rings: Exploring the Beauty of Cross-Sections</p>
+        <h1>김밥처럼 보이는 <span class="highlight">세상의 모든 단면</span></h1>
+        <p>From Kimbap to Everything: A Visual Journey Through Cross-Sections</p>
     </section>
 
     <!-- Filters -->
@@ -441,8 +441,8 @@
             <div class="chip active" data-category="all">All</div>
             <div class="chip" data-category="food">🍱 Food</div>
             <div class="chip" data-category="nature">🌲 Nature</div>
-            <div class="chip" data-category="everyday">✏️ Everyday</div>
-            <div class="chip" data-category="tech">⚡ Tech</div>
+            <div class="chip" data-category="body">💪 Body</div>
+            <div class="chip" data-category="art">🎨 Art</div>
         </div>
     </section>
 
@@ -452,8 +452,8 @@
     </section>
 
     <!-- Submit Button -->
-    <button class="submit-btn" onclick="alert('Upload feature coming soon! 📸')">
-        + Submit Your Section
+    <button class="submit-btn" onclick="alert('김밥같은 단면 사진을 제보해주세요! 📸')">
+        + 단면 제보하기
     </button>
 
     <!-- Modal -->
@@ -487,112 +487,57 @@
             {
                 id: 1,
                 number: '001',
-                title: 'Premium Kimbap',
+                title: '김밥 (Kimbap)',
                 category: 'food',
-                tags: ['Korean', 'Food', 'Rice'],
-                description: 'The origin of our journey: A perfectly rolled premium Kimbap revealing layers of rice, vegetables, and seaweed in harmonious circles. Each ingredient creates its own visual rhythm, from the bright yellow pickled radish to the deep green spinach.',
-                imageFull: 'https://images.unsplash.com/photo-1553621042-f6e147245754?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1553621042-f6e147245754?w=800',
-                colors: ['#F5DEB3', '#8FBC8F', '#FFD700', '#2F4F4F', '#1C1C1C']
+                tags: ['Korean', 'Rice', 'Origin'],
+                description: '김밥 아카이브의 시작점. 완벽하게 말린 김밥의 단면은 흰 쌀, 노란 단무지, 주황 당근, 초록 시금치가 동심원을 이루며 아름다운 패턴을 만듭니다. 각각의 재료가 자신만의 색과 질감으로 하나의 작품을 완성합니다.',
+                imageFull: 'kimbap-real.webp',
+                imageSection: 'kimbap-real.webp',
+                colors: ['#FFFFFF', '#FFD700', '#FF6347', '#228B22', '#1C1C1C']
             },
             {
                 id: 2,
                 number: '002',
-                title: '100-Year Oak Tree Ring',
+                title: '나무의 나이테 (Tree Rings)',
                 category: 'nature',
-                tags: ['Nature', 'Wood', 'Time'],
-                description: 'A century of growth captured in concentric rings. Each circle represents a year of survival, drought, abundance, and change. The natural wood grain patterns create an organic mandala of time itself.',
-                imageFull: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
-                colors: ['#8B4513', '#D2691E', '#F4A460', '#CD853F', '#DEB887']
+                tags: ['Nature', 'Time', 'Growth'],
+                description: '수십 년의 시간이 새겨진 나무의 단면. 동심원으로 펼쳐지는 나이테는 마치 김밥의 층처럼 보입니다. 각 링은 1년의 성장을 의미하며, 넓은 링은 풍요로운 해를, 좁은 링은 가뭄의 해를 말해줍니다.',
+                imageFull: 'kimbap-tree.jpg',
+                imageSection: 'kimbap-tree.jpg',
+                colors: ['#D2691E', '#8B4513', '#F4A460', '#CD853F', '#DEB887']
             },
             {
                 id: 3,
                 number: '003',
-                title: 'Handcrafted Watermelon Candy',
+                title: '적양배추 (Red Cabbage)',
                 category: 'food',
-                tags: ['Candy', 'Handmade', 'Sweet'],
-                description: 'Translucent layers of sugar art mimicking a real watermelon. The pink interior contrasts with the white rind layer and green outer shell, all crafted from crystallized sugar with meticulous attention to detail.',
-                imageFull: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=800',
-                colors: ['#FF69B4', '#FFFFFF', '#90EE90', '#32CD32', '#228B22']
+                tags: ['Vegetable', 'Purple', 'Organic'],
+                description: '자연이 만든 프랙탈 패턴. 적양배추의 단면은 김밥처럼 중심에서 바깥으로 펼쳐지는 유기적 구조를 보여줍니다. 보라색과 흰색이 교차하며 만들어내는 자연의 기하학은 경이롭습니다.',
+                imageFull: 'kimbap-cabbage.webp',
+                imageSection: 'kimbap-cabbage.webp',
+                colors: ['#800080', '#DDA0DD', '#FFFFFF', '#E6E6FA', '#8B008B']
             },
             {
                 id: 4,
                 number: '004',
-                title: 'Tombow Mono Eraser',
-                category: 'everyday',
-                tags: ['Stationery', 'Design', 'Minimal'],
-                description: 'The iconic blue and white eraser reveals its dense, uniform interior structure. A study in functional design where the cross-section shows the material consistency that makes it so effective.',
-                imageFull: 'https://images.unsplash.com/photo-1587916410084-e739f1006f28?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1587916410084-e739f1006f28?w=800',
-                colors: ['#4169E1', '#FFFFFF', '#87CEEB', '#E0E0E0', '#1E90FF']
+                title: '허벅지 근육 단면 (Thigh Muscle)',
+                category: 'body',
+                tags: ['Anatomy', 'Muscle', 'Biology'],
+                description: '인체의 경이로움. 허벅지를 가로로 자른 단면은 마치 김밥처럼 여러 근육 조직이 층을 이루며 배치되어 있습니다. 핑크색 근육 다발들이 노란 지방층과 흰 힘줄로 감싸여 있는 모습은 자연의 완벽한 설계를 보여줍니다.',
+                imageFull: 'kimbap-thigh.webp',
+                imageSection: 'kimbap-thigh.webp',
+                colors: ['#FFB6C1', '#FF69B4', '#FFF8DC', '#F5DEB3', '#FFE4B5']
             },
             {
                 id: 5,
                 number: '005',
-                title: 'Submarine Cable Wire',
-                category: 'tech',
-                tags: ['Technology', 'Engineering', 'Infrastructure'],
-                description: 'Layers of copper, insulation, and protective sheathing designed to carry data across ocean floors. Each layer serves a critical function in protecting the flow of global internet communication.',
-                imageFull: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800',
-                colors: ['#FF6347', '#FFD700', '#4682B4', '#2F4F4F', '#708090']
-            },
-            {
-                id: 6,
-                number: '006',
-                title: 'Meteorite Fragment',
-                category: 'nature',
-                tags: ['Space', 'Mineral', 'Rare'],
-                description: 'A piece of the cosmos: metallic crystals formed billions of years ago in the heart of an asteroid. The Widmanstätten pattern visible in the cross-section can only form in the zero-gravity of space.',
-                imageFull: 'https://images.unsplash.com/photo-1614642240262-87e433d4d3f4?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1614642240262-87e433d4d3f4?w=800',
-                colors: ['#C0C0C0', '#708090', '#A9A9A9', '#2F4F4F', '#1C1C1C']
-            },
-            {
-                id: 7,
-                number: '007',
-                title: 'Rainbow Layered Cake',
-                category: 'food',
-                tags: ['Dessert', 'Colorful', 'Cake'],
-                description: 'Pure joy in edible form. Six vibrant layers of cake separated by cream frosting, creating a spectrum that delights before the first bite. Each layer is a carefully calibrated balance of flour, eggs, and color.',
-                imageFull: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800',
-                colors: ['#FF69B4', '#FFD700', '#00CED1', '#9370DB', '#FF6347']
-            },
-            {
-                id: 8,
-                number: '008',
-                title: 'Colored Pencils Bundle',
-                category: 'everyday',
-                tags: ['Art', 'Stationery', 'Color'],
-                description: 'A spectrum of creativity: tightly bundled colored pencils reveal their pigmented cores in a mesmerizing circular arrangement. Each pencil contains layers of wood, paint, and the compressed graphite-pigment core.',
-                imageFull: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1513542789411-b6a5d4f31634?w=800',
-                colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF']
-            },
-            {
-                id: 9,
-                number: '009',
-                title: 'Agate Geode',
-                category: 'nature',
-                tags: ['Mineral', 'Crystal', 'Earth'],
-                description: 'Nature\'s hidden artwork: millions of years of mineral deposits create bands of color in striking patterns. Each layer represents a different chemical composition and environmental condition from deep within the Earth.',
-                imageFull: 'https://images.unsplash.com/photo-1602263364726-ba4fab5e8e0a?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1602263364726-ba4fab5e8e0a?w=800',
-                colors: ['#8B4789', '#FFB6C1', '#FFF8DC', '#4682B4', '#2F4F4F']
-            },
-            {
-                id: 10,
-                number: '010',
-                title: 'Citrus Fruit Slice',
-                category: 'food',
-                tags: ['Fresh', 'Natural', 'Vitamin'],
-                description: 'Radial perfection: the citrus fruit\'s internal architecture is a masterclass in natural geometry. Translucent segments arranged like a wheel, each pocket filled with juice vesicles that burst with flavor.',
-                imageFull: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800',
-                imageSection: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?w=800',
-                colors: ['#FFA500', '#FFD700', '#FFFACD', '#FFFFFF', '#F0E68C']
+                title: '마블링 스톤 (Marble Stone)',
+                category: 'art',
+                tags: ['Marble', 'Geology', 'Pattern'],
+                description: '수백만 년에 걸쳐 형성된 대리석의 단면. 마치 김밥의 재료들이 섞여 있는 것처럼, 갈색, 크림색, 흰색의 광물질들이 유기적으로 흐르며 자연의 추상화를 만들어냅니다. 각 층은 다른 지질학적 시대를 대표합니다.',
+                imageFull: 'kimbap-marble.webp',
+                imageSection: 'kimbap-marble.webp',
+                colors: ['#8B4513', '#F5DEB3', '#FFFFFF', '#D2691E', '#A0826D']
             }
         ];
 
