@@ -94,18 +94,19 @@
         /* Hero Section */
         .hero {
             margin-top: 100px;
-            padding: 80px 40px;
+            padding: 40px 40px 60px 40px;
             text-align: center;
-            max-width: 1000px;
+            max-width: 100%;
             margin-left: auto;
             margin-right: auto;
+            border-bottom: 2px solid rgba(227, 255, 0, 0.3);
         }
 
         .hero h1 {
             font-family: 'Jua', cursive;
-            font-size: 3.5rem;
+            font-size: 3rem;
             font-weight: 900;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
             line-height: 1.2;
         }
 
@@ -114,17 +115,19 @@
         }
 
         .hero p {
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: var(--text-gray);
-            margin-bottom: 40px;
+            margin-bottom: 0;
             letter-spacing: 0.5px;
         }
 
         /* Filter Chips */
         .filter-section {
-            padding: 30px 40px;
-            max-width: 1400px;
+            padding: 20px 40px;
+            max-width: 100%;
             margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .filter-chips {
@@ -151,117 +154,148 @@
             transform: translateY(-2px);
         }
 
-        /* Grid */
+        /* Grid - 퇴적층 스타일 */
         .grid-container {
-            max-width: 1400px;
-            margin: 40px auto;
-            padding: 0 40px;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
         }
 
         .masonry-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
         }
 
-        /* Card */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+        /* Layer Card - 퇴적층 레이어 */
+        .layer-card {
+            width: 100%;
+            height: 150px;
+            position: relative;
             overflow: hidden;
             cursor: pointer;
             transition: all 0.4s ease;
-            position: relative;
+            border-bottom: 2px solid rgba(227, 255, 0, 0.2);
         }
 
-        .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 60px rgba(227, 255, 0, 0.2);
-            border-color: var(--accent);
+        .layer-card:hover {
+            height: 200px;
+            z-index: 10;
+            box-shadow: 0 0 40px rgba(227, 255, 0, 0.4);
         }
 
-        .card-image-container {
-            position: relative;
-            overflow: hidden;
-            aspect-ratio: 4/5;
-        }
-
-        .card-image {
+        .layer-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center;
             transition: transform 0.6s ease;
         }
 
-        .card:hover .card-image {
-            transform: scale(1.1);
+        .layer-card:hover .layer-image {
+            transform: scale(1.05);
+        }
+
+        .layer-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.8) 100%);
+            display: flex;
+            align-items: center;
+            padding: 0 60px;
+            transition: all 0.4s ease;
+        }
+
+        .layer-card:hover .layer-overlay {
+            background: linear-gradient(90deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 50%, rgba(0,0,0,0.9) 100%);
+        }
+
+        .layer-content {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .layer-info {
+            flex: 1;
+        }
+
+        .layer-number {
+            font-size: 1rem;
+            color: var(--accent);
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+
+        .layer-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            font-family: 'Jua', cursive;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .layer-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.4s ease;
+        }
+
+        .layer-card:hover .layer-tags {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 4px 12px;
+            background: rgba(227, 255, 0, 0.2);
+            color: var(--accent);
+            border-radius: 12px;
+            border: 1px solid rgba(227, 255, 0, 0.4);
         }
 
         .slice-line {
             position: absolute;
             top: 0;
             left: -100%;
-            width: 3px;
-            height: 100%;
+            width: 100%;
+            height: 3px;
             background: var(--accent);
             box-shadow: 0 0 20px var(--accent);
             transition: left 0.6s ease;
         }
 
-        .card:hover .slice-line {
+        .layer-card:hover .slice-line {
             left: 100%;
-        }
-
-        .card-content {
-            padding: 20px;
-        }
-
-        .card-number {
-            font-size: 0.75rem;
-            color: var(--accent);
-            font-weight: 700;
-            letter-spacing: 2px;
-        }
-
-        .card-title {
-            font-size: 1.4rem;
-            font-weight: 700;
-            margin: 8px 0;
-            font-family: 'Jua', cursive;
-        }
-
-        .card-tags {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-            flex-wrap: wrap;
-        }
-
-        .tag {
-            font-size: 0.7rem;
-            padding: 4px 12px;
-            background: rgba(227, 255, 0, 0.1);
-            color: var(--accent);
-            border-radius: 12px;
-            border: 1px solid rgba(227, 255, 0, 0.3);
         }
 
         .like-btn {
             position: absolute;
-            top: 16px;
-            right: 16px;
+            top: 50%;
+            right: 60px;
+            transform: translateY(-50%);
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.3s ease;
+            font-size: 1.5rem;
+            z-index: 5;
         }
 
         .like-btn:hover {
@@ -399,11 +433,30 @@
         /* Responsive */
         @media (max-width: 768px) {
             .hero h1 {
-                font-size: 2.5rem;
+                font-size: 2rem;
             }
 
-            .masonry-grid {
-                grid-template-columns: 1fr;
+            .layer-card {
+                height: 120px;
+            }
+
+            .layer-card:hover {
+                height: 150px;
+            }
+
+            .layer-title {
+                font-size: 1.8rem;
+            }
+
+            .layer-overlay {
+                padding: 0 20px;
+            }
+
+            .like-btn {
+                right: 20px;
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
             }
 
             .modal-split {
@@ -545,7 +598,7 @@
         let currentFilter = 'all';
         let likedItems = new Set();
 
-        // Render Grid
+        // Render Grid - 퇴적층 스타일
         function renderGrid() {
             const grid = document.getElementById('grid');
             const filtered = currentFilter === 'all' 
@@ -553,21 +606,23 @@
                 : sections.filter(s => s.category === currentFilter);
 
             grid.innerHTML = filtered.map(section => `
-                <div class="card" onclick="openModal(${section.id})">
-                    <div class="card-image-container">
-                        <img class="card-image" src="${section.imageSection}" alt="${section.title}">
-                        <div class="slice-line"></div>
-                        <div class="like-btn ${likedItems.has(section.id) ? 'liked' : ''}" 
-                             onclick="event.stopPropagation(); toggleLike(${section.id})">
-                            ${likedItems.has(section.id) ? '♥' : '♡'}
+                <div class="layer-card" onclick="openModal(${section.id})">
+                    <img class="layer-image" src="${section.imageSection}" alt="${section.title}">
+                    <div class="slice-line"></div>
+                    <div class="layer-overlay">
+                        <div class="layer-content">
+                            <div class="layer-info">
+                                <div class="layer-number">${section.number}</div>
+                                <div class="layer-title">${section.title}</div>
+                                <div class="layer-tags">
+                                    ${section.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="card-content">
-                        <div class="card-number">${section.number}</div>
-                        <div class="card-title">${section.title}</div>
-                        <div class="card-tags">
-                            ${section.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                        </div>
+                    <div class="like-btn ${likedItems.has(section.id) ? 'liked' : ''}" 
+                         onclick="event.stopPropagation(); toggleLike(${section.id})">
+                        ${likedItems.has(section.id) ? '♥' : '♡'}
                     </div>
                 </div>
             `).join('');
@@ -586,14 +641,14 @@
         // Search
         document.getElementById('searchInput').addEventListener('input', (e) => {
             const query = e.target.value.toLowerCase();
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                const title = card.querySelector('.card-title').textContent.toLowerCase();
-                const tags = card.querySelector('.card-tags').textContent.toLowerCase();
+            const layers = document.querySelectorAll('.layer-card');
+            layers.forEach(layer => {
+                const title = layer.querySelector('.layer-title').textContent.toLowerCase();
+                const tags = layer.querySelector('.layer-tags').textContent.toLowerCase();
                 if (title.includes(query) || tags.includes(query)) {
-                    card.style.display = 'block';
+                    layer.style.display = 'block';
                 } else {
-                    card.style.display = 'none';
+                    layer.style.display = 'none';
                 }
             });
         });
