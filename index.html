@@ -377,6 +377,36 @@
             box-shadow: 0 0 30px rgba(255, 0, 255, 0.6), 0 0 50px rgba(0, 255, 255, 0.4);
         }
 
+        .japangi-btn {
+            position: fixed;
+            top: 680px;
+            left: 20px;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.3), rgba(0, 255, 255, 0.3));
+            color: #FFFFFF;
+            text-decoration: none;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            font-weight: 600;
+            animation: rainbow-border 3s linear infinite;
+        }
+
+        @keyframes rainbow-border {
+            0% { border-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
+            33% { border-color: #00ffff; box-shadow: 0 0 20px #00ffff; }
+            66% { border-color: #ffff00; box-shadow: 0 0 20px #ffff00; }
+            100% { border-color: #ff00ff; box-shadow: 0 0 20px #ff00ff; }
+        }
+
+        .japangi-btn:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 0 40px rgba(255, 0, 255, 0.8), 0 0 60px rgba(0, 255, 255, 0.6);
+        }
+
         @media (max-width: 768px) {
             .title {
                 top: -60px;
@@ -404,6 +434,7 @@
     <a href="truman-escape.html" class="truman-btn">🚪 Truman</a>
     <a href="section.html" class="section-btn">✂️ Section</a>
     <a href="vending-machine.html" class="vending-btn">🎰 Vending</a>
+    <a href="japangi.html" class="japangi-btn">🌈 자판기</a>
     
     <div class="container">
         <div class="title">FACE OF GRADIENT</div>

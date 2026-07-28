@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative Flow - Generative Art</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: crosshair;
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            color: white;
+            z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-item {
+            margin: 10px 0;
+        }
+
+        .control-item label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        input[type="range"] {
+            width: 200px;
+            margin-right: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 0.9rem;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.2);
+            border-color: white;
+        }
+
+        .color-swatch.active {
+            border-color: white;
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .info {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.85rem;
+            z-index: 100;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                top: 10px;
+                left: 10px;
+                padding: 15px;
+                max-width: calc(100vw - 20px);
+            }
+
+            input[type="range"] {
+                width: 150px;
+            }
+
+            .info {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div class="controls">
+        <div class="title">✨ Creative Flow</div>
+        
+        <div class="control-item">
+            <label>Particle Count: <span id="particleValue">100</span></label>
+            <input type="range" id="particleCount" min="50" max="500" value="100">
+        </div>
+
+        <div class="control-item">
+            <label>Flow Speed: <span id="speedValue">2</span></label>
+            <input type="range" id="flowSpeed" min="1" max="10" value="2">
+        </div>
+
+        <div class="control-item">
+            <label>Trail Length: <span id="trailValue">50</span></label>
+            <input type="range" id="trailLength" min="10" max="100" value="50">
+        </div>
+
+        <div class="control-item">
+            <label>Color Palette:</label>
+            <div class="color-palette">
+                <div class="color-swatch active" style="background: #667eea" data-palette="purple"></div>
+                <div class="color-swatch" style="background: #f093fb" data-palette="pink"></div>
+                <div class="color-swatch" style="background: #4facfe" data-palette="blue"></div>
+                <div class="color-swatch" style="background: #43e97b" data-palette="green"></div>
+                <div class="color-swatch" style="background: #fa709a" data-palette="red"></div>
+                <div class="color-swatch" style="background: linear-gradient(135deg, #667eea, #764ba2)" data-palette="rainbow"></div>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 15px;">
+            <button class="btn" onclick="clearCanvas()">Clear</button>
+            <button class="btn" onclick="togglePause()">Pause</button>
+            <button class="btn" onclick="saveImage()">Save</button>
+        </div>
+    </div>
+
+    <div class="info">
+        💡 Click and drag to create beautiful flows<br>
+        🎨 Experiment with different settings<br>
+        📸 Save your masterpiece
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // 캔버스 사이즈
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // 설정
+        let config = {
+            particleCount: 100,
+            flowSpeed: 2,
+            trailLength: 50,
+            palette: 'purple',
+            paused: false
+        };
+
+        // 컬러 팔레트
+        const palettes = {
+            purple: ['#667eea', '#764ba2', '#f093fb', '#c471f5'],
+            pink: ['#f093fb', '#f5576c', '#fa709a', '#fee140'],
+            blue: ['#4facfe', '#00f2fe', '#43e97b', '#38f9d7'],
+            green: ['#43e97b', '#38f9d7', '#fa709a', '#fee140'],
+            red: ['#fa709a', '#fee140', '#f093fb', '#f5576c'],
+            rainbow: ['#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140']
+        };
+
+        // 파티클 클래스
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * config.flowSpeed;
+                this.vy = (Math.random() - 0.5) * config.flowSpeed;
+                this.life = 100;
+                this.maxLife = 100;
+                this.size = Math.random() * 3 + 1;
+                this.color = palettes[config.palette][Math.floor(Math.random() * palettes[config.palette].length)];
+                this.history = [];
+            }
+
+            update(mouseX, mouseY, isMouseDown) {
+                // 마우스 인력
+                if (isMouseDown && mouseX !== null) {
+                    const dx = mouseX - this.x;
+                    const dy = mouseY - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 200) {
+                        const force = (200 - distance) / 200;
+                        this.vx += (dx / distance) * force * 0.5;
+                        this.vy += (dy / distance) * force * 0.5;
+                    }
+                }
+
+                // 플로우 필드 (Perlin noise 대신 간단한 sin/cos)
+                const angle = Math.sin(this.x * 0.01) * Math.cos(this.y * 0.01) * Math.PI * 2;
+                this.vx += Math.cos(angle) * 0.1;
+                this.vy += Math.sin(angle) * 0.1;
+
+                // 속도 제한
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > config.flowSpeed * 2) {
+                    this.vx = (this.vx / speed) * config.flowSpeed * 2;
+                    this.vy = (this.vy / speed) * config.flowSpeed * 2;
+                }
+
+                // 위치 업데이트
+                this.history.push({ x: this.x, y: this.y });
+                if (this.history.length > config.trailLength) {
+                    this.history.shift();
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 마찰
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+
+                // 생명력 감소
+                this.life--;
+
+                // 화면 밖으로 나가면 리셋
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height || this.life <= 0) {
+                    this.reset();
+                }
+            }
+
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * config.flowSpeed;
+                this.vy = (Math.random() - 0.5) * config.flowSpeed;
+                this.life = this.maxLife;
+                this.history = [];
+                this.color = palettes[config.palette][Math.floor(Math.random() * palettes[config.palette].length)];
+            }
+
+            draw() {
+                // 트레일 그리기
+                if (this.history.length > 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(this.history[0].x, this.history[0].y);
+                    
+                    for (let i = 1; i < this.history.length; i++) {
+                        ctx.lineTo(this.history[i].x, this.history[i].y);
+                    }
+                    
+                    const alpha = this.life / this.maxLife;
+                    const gradient = ctx.createLinearGradient(
+                        this.history[0].x, this.history[0].y,
+                        this.x, this.y
+                    );
+                    
+                    gradient.addColorStop(0, this.color + '00');
+                    gradient.addColorStop(1, this.color + Math.floor(alpha * 255).toString(16).padStart(2, '0'));
+                    
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = this.size;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.stroke();
+                }
+
+                // 파티클 자체
+                const alpha = this.life / this.maxLife;
+                ctx.fillStyle = this.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 글로우 효과
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = this.color;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // 파티클 배열
+        let particles = [];
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < config.particleCount; i++) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height
+                ));
+            }
+        }
+
+        initParticles();
+
+        // 마우스 상태
+        let mouse = {
+            x: null,
+            y: null,
+            isDown: false
+        };
+
+        canvas.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        canvas.addEventListener('mousedown', () => {
+            mouse.isDown = true;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            mouse.isDown = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            mouse.x = null;
+            mouse.y = null;
+            mouse.isDown = false;
+        });
+
+        // 터치 이벤트
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            mouse.x = e.touches[0].clientX;
+            mouse.y = e.touches[0].clientY;
+            mouse.isDown = true;
+        });
+
+        canvas.addEventListener('touchend', () => {
+            mouse.isDown = false;
+        });
+
+        // 애니메이션 루프
+        function animate() {
+            if (!config.paused) {
+                // 페이드 효과 (트레일)
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 파티클 업데이트 및 그리기
+                particles.forEach(particle => {
+                    particle.update(mouse.x, mouse.y, mouse.isDown);
+                    particle.draw();
+                });
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // 컨트롤
+        document.getElementById('particleCount').addEventListener('input', (e) => {
+            config.particleCount = parseInt(e.target.value);
+            document.getElementById('particleValue').textContent = config.particleCount;
+            initParticles();
+        });
+
+        document.getElementById('flowSpeed').addEventListener('input', (e) => {
+            config.flowSpeed = parseInt(e.target.value);
+            document.getElementById('speedValue').textContent = config.flowSpeed;
+        });
+
+        document.getElementById('trailLength').addEventListener('input', (e) => {
+            config.trailLength = parseInt(e.target.value);
+            document.getElementById('trailValue').textContent = config.trailLength;
+        });
+
+        // 컬러 팔레트 선택
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                swatch.classList.add('active');
+                config.palette = swatch.dataset.palette;
+                
+                // 모든 파티클 컬러 업데이트
+                particles.forEach(p => {
+                    p.color = palettes[config.palette][Math.floor(Math.random() * palettes[config.palette].length)];
+                });
+            });
+        });
+
+        // 버튼 기능
+        function clearCanvas() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            initParticles();
+        }
+
+        function togglePause() {
+            config.paused = !config.paused;
+            event.target.textContent = config.paused ? 'Resume' : 'Pause';
+        }
+
+        function saveImage() {
+            const link = document.createElement('a');
+            link.download = `creative-flow-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // 리사이즈
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        });
+
+        // 키보드 단축키
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'c' || e.key === 'C') {
+                clearCanvas();
+            } else if (e.key === ' ') {
+                e.preventDefault();
+                togglePause();
+            } else if (e.key === 's' || e.key === 'S') {
+                saveImage();
+            } else if (e.key >= '1' && e.key <= '6') {
+                const palettes = ['purple', 'pink', 'blue', 'green', 'red', 'rainbow'];
+                const index = parseInt(e.key) - 1;
+                if (index < palettes.length) {
+                    config.palette = palettes[index];
+                    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+                    document.querySelectorAll('.color-swatch')[index].classList.add('active');
+                }
+            }
+        });
+
+        // 자동 파티클 생성 (마우스 없을 때)
+        setInterval(() => {
+            if (!mouse.isDown && Math.random() < 0.1) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                for (let i = 0; i < 10; i++) {
+                    const p = new Particle(x, y);
+                    p.vx = (Math.random() - 0.5) * 10;
+                    p.vy = (Math.random() - 0.5) * 10;
+                    particles.push(p);
+                }
+                setTimeout(() => {
+                    particles.splice(0, 10);
+                }, 2000);
+            }
+        }, 3000);
+
+        // 초기 블랙 배경
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    </script>
+</body>
+</html>
