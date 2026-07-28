@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creative Flow - Generative Art</title>
+    <title>패턴 자판기 - Pattern Vending Machine</title>
     <style>
         * {
             margin: 0;
@@ -83,6 +83,49 @@
             background-clip: text;
         }
 
+        .subtitle {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 20px;
+        }
+
+        .pattern-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .pattern-btn {
+            padding: 12px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .pattern-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(102, 126, 234, 0.5);
+            transform: scale(1.05);
+        }
+
+        .pattern-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .pattern-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+
         .color-palette {
             display: flex;
             gap: 10px;
@@ -145,7 +188,50 @@
     <canvas id="canvas"></canvas>
 
     <div class="controls">
-        <div class="title">✨ Creative Flow</div>
+        <div class="title">🎰 패턴 자판기</div>
+        <div class="subtitle">PATTERN VENDING MACHINE</div>
+        
+        <div class="control-item">
+            <label>패턴 선택:</label>
+            <div class="pattern-grid">
+                <button class="pattern-btn active" data-pattern="flow">
+                    <span class="pattern-icon">🌊</span>
+                    Flow
+                </button>
+                <button class="pattern-btn" data-pattern="spiral">
+                    <span class="pattern-icon">🌀</span>
+                    Spiral
+                </button>
+                <button class="pattern-btn" data-pattern="wave">
+                    <span class="pattern-icon">〰️</span>
+                    Wave
+                </button>
+                <button class="pattern-btn" data-pattern="circle">
+                    <span class="pattern-icon">⭕</span>
+                    Circle
+                </button>
+                <button class="pattern-btn" data-pattern="grid">
+                    <span class="pattern-icon">⬜</span>
+                    Grid
+                </button>
+                <button class="pattern-btn" data-pattern="noise">
+                    <span class="pattern-icon">🎲</span>
+                    Noise
+                </button>
+                <button class="pattern-btn" data-pattern="explosion">
+                    <span class="pattern-icon">💥</span>
+                    Burst
+                </button>
+                <button class="pattern-btn" data-pattern="vortex">
+                    <span class="pattern-icon">🌪️</span>
+                    Vortex
+                </button>
+                <button class="pattern-btn" data-pattern="mandala">
+                    <span class="pattern-icon">✨</span>
+                    Mandala
+                </button>
+            </div>
+        </div>
         
         <div class="control-item">
             <label>Particle Count: <span id="particleValue">100</span></label>
@@ -153,7 +239,7 @@
         </div>
 
         <div class="control-item">
-            <label>Flow Speed: <span id="speedValue">2</span></label>
+            <label>Pattern Speed: <span id="speedValue">2</span></label>
             <input type="range" id="flowSpeed" min="1" max="10" value="2">
         </div>
 
@@ -182,9 +268,9 @@
     </div>
 
     <div class="info">
-        💡 Click and drag to create beautiful flows<br>
-        🎨 Experiment with different settings<br>
-        📸 Save your masterpiece
+        🎰 패턴을 선택하고 드래그해서 나만의 패턴 제작<br>
+        🎨 다양한 설정으로 실험해보세요<br>
+        📸 마음에 드는 패턴을 저장하세요
     </div>
 
     <script>
@@ -201,7 +287,8 @@
             flowSpeed: 2,
             trailLength: 50,
             palette: 'purple',
-            paused: false
+            paused: false,
+            pattern: 'flow'  // 패턴 추가
         };
 
         // 컬러 팔레트
@@ -242,10 +329,8 @@
                     }
                 }
 
-                // 플로우 필드 (Perlin noise 대신 간단한 sin/cos)
-                const angle = Math.sin(this.x * 0.01) * Math.cos(this.y * 0.01) * Math.PI * 2;
-                this.vx += Math.cos(angle) * 0.1;
-                this.vy += Math.sin(angle) * 0.1;
+                // 패턴별 움직임
+                this.applyPattern();
 
                 // 속도 제한
                 const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
@@ -273,6 +358,104 @@
                 // 화면 밖으로 나가면 리셋
                 if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height || this.life <= 0) {
                     this.reset();
+                }
+            }
+
+            applyPattern() {
+                const time = Date.now() * 0.001;
+                
+                switch(config.pattern) {
+                    case 'flow':
+                        // 플로우 필드
+                        const angle = Math.sin(this.x * 0.01) * Math.cos(this.y * 0.01) * Math.PI * 2;
+                        this.vx += Math.cos(angle) * 0.1;
+                        this.vy += Math.sin(angle) * 0.1;
+                        break;
+                        
+                    case 'spiral':
+                        // 나선형
+                        const centerX = canvas.width / 2;
+                        const centerY = canvas.height / 2;
+                        const dx = this.x - centerX;
+                        const dy = this.y - centerY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const spiralAngle = Math.atan2(dy, dx) + 0.1;
+                        this.vx += Math.cos(spiralAngle) * 0.2;
+                        this.vy += Math.sin(spiralAngle) * 0.2;
+                        break;
+                        
+                    case 'wave':
+                        // 파동
+                        this.vx += Math.sin(this.y * 0.01 + time) * 0.2;
+                        this.vy += Math.cos(this.x * 0.01 + time) * 0.2;
+                        break;
+                        
+                    case 'circle':
+                        // 원형
+                        const cx = canvas.width / 2;
+                        const cy = canvas.height / 2;
+                        const cdx = this.x - cx;
+                        const cdy = this.y - cy;
+                        const cAngle = Math.atan2(cdy, cdx);
+                        this.vx += Math.cos(cAngle + Math.PI / 2) * 0.15;
+                        this.vy += Math.sin(cAngle + Math.PI / 2) * 0.15;
+                        break;
+                        
+                    case 'grid':
+                        // 그리드
+                        const gridSize = 50;
+                        const gx = Math.floor(this.x / gridSize) * gridSize + gridSize / 2;
+                        const gy = Math.floor(this.y / gridSize) * gridSize + gridSize / 2;
+                        this.vx += (gx - this.x) * 0.01;
+                        this.vy += (gy - this.y) * 0.01;
+                        break;
+                        
+                    case 'noise':
+                        // 노이즈 (랜덤)
+                        this.vx += (Math.random() - 0.5) * 0.5;
+                        this.vy += (Math.random() - 0.5) * 0.5;
+                        break;
+                        
+                    case 'explosion':
+                        // 폭발 (중심에서 퍼져나감)
+                        const ex = canvas.width / 2;
+                        const ey = canvas.height / 2;
+                        const edx = this.x - ex;
+                        const edy = this.y - ey;
+                        const eDist = Math.sqrt(edx * edx + edy * edy);
+                        if (eDist > 0) {
+                            this.vx += (edx / eDist) * 0.3;
+                            this.vy += (edy / eDist) * 0.3;
+                        }
+                        break;
+                        
+                    case 'vortex':
+                        // 소용돌이
+                        const vx = canvas.width / 2;
+                        const vy = canvas.height / 2;
+                        const vdx = this.x - vx;
+                        const vdy = this.y - vy;
+                        const vDist = Math.sqrt(vdx * vdx + vdy * vdy);
+                        const vAngle = Math.atan2(vdy, vdx);
+                        const pullStrength = 0.1;
+                        const spinStrength = 0.2;
+                        this.vx += Math.cos(vAngle) * -pullStrength + Math.cos(vAngle + Math.PI / 2) * spinStrength;
+                        this.vy += Math.sin(vAngle) * -pullStrength + Math.sin(vAngle + Math.PI / 2) * spinStrength;
+                        break;
+                        
+                    case 'mandala':
+                        // 만다라 (대칭 패턴)
+                        const mx = canvas.width / 2;
+                        const my = canvas.height / 2;
+                        const mdx = this.x - mx;
+                        const mdy = this.y - my;
+                        const mAngle = Math.atan2(mdy, mdx);
+                        const mDist = Math.sqrt(mdx * mdx + mdy * mdy);
+                        const symmetry = 6;
+                        const mSymAngle = Math.floor(mAngle / (Math.PI * 2 / symmetry)) * (Math.PI * 2 / symmetry);
+                        this.vx += Math.cos(mSymAngle) * 0.1;
+                        this.vy += Math.sin(mSymAngle) * 0.1;
+                        break;
                 }
             }
 
@@ -430,6 +613,18 @@
             });
         });
 
+        // 패턴 선택
+        document.querySelectorAll('.pattern-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.pattern-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                config.pattern = btn.dataset.pattern;
+                
+                // 패턴 변경 시 파티클 리셋
+                clearCanvas();
+            });
+        });
+
         // 버튼 기능
         function clearCanvas() {
             ctx.fillStyle = '#000';
@@ -444,7 +639,7 @@
 
         function saveImage() {
             const link = document.createElement('a');
-            link.download = `creative-flow-${Date.now()}.png`;
+            link.download = `pattern-${config.pattern}-${Date.now()}.png`;
             link.href = canvas.toDataURL();
             link.click();
         }
