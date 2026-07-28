@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자판기 - Typography Art</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Black Han Sans', sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 3D 공간 */
+        .scene {
+            perspective: 1000px;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* 파티클 배경 */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* 메인 컨테이너 */
+        .typography-container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            gap: 50px;
+            transform-style: preserve-3d;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotateY(0deg); }
+            50% { transform: translateY(-30px) rotateY(10deg); }
+        }
+
+        /* 각 글자 */
+        .char {
+            position: relative;
+            font-size: 20vw;
+            font-weight: 900;
+            color: transparent;
+            -webkit-text-stroke: 2px rgba(255, 255, 255, 0.3);
+            text-shadow: 
+                0 0 20px rgba(255, 0, 255, 0.8),
+                0 0 40px rgba(0, 255, 255, 0.6),
+                0 0 60px rgba(255, 255, 0, 0.4);
+            transform-style: preserve-3d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .char:hover {
+            transform: scale(1.2) translateZ(100px);
+            -webkit-text-stroke: 3px rgba(255, 255, 255, 0.8);
+        }
+
+        /* 자 - 첫번째 글자 */
+        .char-1 {
+            animation: char1-anim 4s ease-in-out infinite;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        @keyframes char1-anim {
+            0%, 100% { 
+                filter: hue-rotate(0deg) brightness(1);
+                transform: rotateY(0deg) translateZ(0);
+            }
+            50% { 
+                filter: hue-rotate(180deg) brightness(1.5);
+                transform: rotateY(180deg) translateZ(50px);
+            }
+        }
+
+        /* 판 - 두번째 글자 */
+        .char-2 {
+            animation: char2-anim 5s ease-in-out infinite 0.5s;
+            background: linear-gradient(135deg, #00ffff, #ffff00);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        @keyframes char2-anim {
+            0%, 100% { 
+                filter: hue-rotate(0deg) saturate(1);
+                transform: scale(1) rotateX(0deg);
+            }
+            50% { 
+                filter: hue-rotate(360deg) saturate(2);
+                transform: scale(1.3) rotateX(360deg);
+            }
+        }
+
+        /* 기 - 세번째 글자 */
+        .char-3 {
+            animation: char3-anim 6s ease-in-out infinite 1s;
+            background: linear-gradient(225deg, #ffff00, #ff00ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        @keyframes char3-anim {
+            0%, 100% { 
+                filter: hue-rotate(0deg) contrast(1);
+                transform: rotateZ(0deg) translateY(0);
+            }
+            50% { 
+                filter: hue-rotate(-180deg) contrast(2);
+                transform: rotateZ(360deg) translateY(-50px);
+            }
+        }
+
+        /* 글리치 레이어 */
+        .char::before,
+        .char::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .char::before {
+            animation: glitch-1 2s infinite;
+            clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+            transform: translateX(-3px);
+            opacity: 0.8;
+        }
+
+        .char::after {
+            animation: glitch-2 3s infinite;
+            clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+            transform: translateX(3px);
+            opacity: 0.8;
+        }
+
+        @keyframes glitch-1 {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-5px); }
+            40% { transform: translateX(5px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+        }
+
+        @keyframes glitch-2 {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(5px); }
+            50% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* 3D 깊이감 효과 */
+        .char-depth {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-size: 20vw;
+            font-weight: 900;
+            color: transparent;
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
+            z-index: -1;
+        }
+
+        .char-1 .char-depth { transform: translateZ(-20px) translateX(-5px) translateY(-5px); opacity: 0.3; }
+        .char-2 .char-depth { transform: translateZ(-40px) translateX(-10px) translateY(-10px); opacity: 0.2; }
+        .char-3 .char-depth { transform: translateZ(-60px) translateX(-15px) translateY(-15px); opacity: 0.1; }
+
+        /* 네온 글로우 */
+        .neon-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150%;
+            height: 150%;
+            background: radial-gradient(circle, 
+                rgba(255, 0, 255, 0.4) 0%, 
+                rgba(0, 255, 255, 0.3) 30%, 
+                transparent 70%);
+            filter: blur(50px);
+            animation: glow-pulse 3s ease-in-out infinite;
+            z-index: -2;
+        }
+
+        @keyframes glow-pulse {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        /* 스캔라인 */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.8), transparent);
+            animation: scan 3s linear infinite;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        @keyframes scan {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        /* 홀로그램 효과 */
+        .hologram {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                180deg,
+                transparent 0%,
+                rgba(0, 255, 255, 0.1) 50%,
+                transparent 100%
+            );
+            animation: hologram-scan 2s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes hologram-scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        /* RGB 분리 효과 */
+        .char:active {
+            animation: rgb-split 0.3s;
+        }
+
+        @keyframes rgb-split {
+            0% { text-shadow: 0 0 0; }
+            25% { text-shadow: -5px 0 0 #ff00ff, 5px 0 0 #00ffff; }
+            50% { text-shadow: -10px 0 0 #ff00ff, 10px 0 0 #00ffff; }
+            75% { text-shadow: -5px 0 0 #ff00ff, 5px 0 0 #00ffff; }
+            100% { text-shadow: 0 0 0; }
+        }
+
+        /* 레이저 빔 */
+        .laser {
+            position: fixed;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg, transparent, rgba(255, 0, 255, 0.8), transparent);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.8);
+            animation: laser-move 5s linear infinite;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes laser-move {
+            0% { left: -10%; }
+            100% { left: 110%; }
+        }
+
+        /* 픽셀 노이즈 */
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" /></filter><rect width="100%" height="100%" filter="url(%23noise)" opacity="0.05"/></svg>');
+            pointer-events: none;
+            animation: noise-anim 0.2s infinite;
+            z-index: 99;
+        }
+
+        @keyframes noise-anim {
+            0% { transform: translate(0, 0); }
+            10% { transform: translate(-2%, -2%); }
+            20% { transform: translate(2%, 2%); }
+            30% { transform: translate(-2%, 2%); }
+            40% { transform: translate(2%, -2%); }
+            50% { transform: translate(-2%, -2%); }
+            60% { transform: translate(2%, 2%); }
+            70% { transform: translate(-2%, 2%); }
+            80% { transform: translate(2%, -2%); }
+            90% { transform: translate(-2%, -2%); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* 링 효과 */
+        .ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200%;
+            height: 200%;
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: ring-expand 4s ease-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes ring-expand {
+            0% { 
+                width: 50%;
+                height: 50%;
+                opacity: 1;
+                border-width: 3px;
+            }
+            100% { 
+                width: 300%;
+                height: 300%;
+                opacity: 0;
+                border-width: 0;
+            }
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .typography-container {
+                flex-direction: column;
+                gap: 20px;
+            }
+            .char {
+                font-size: 25vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+    <div class="scanline"></div>
+    <div class="laser"></div>
+    <div class="noise"></div>
+    
+    <div class="scene">
+        <div class="typography-container">
+            <div class="char char-1" data-text="자">
+                자
+                <div class="char-depth">자</div>
+                <div class="neon-glow"></div>
+                <div class="hologram"></div>
+                <div class="ring"></div>
+            </div>
+            <div class="char char-2" data-text="판">
+                판
+                <div class="char-depth">판</div>
+                <div class="neon-glow"></div>
+                <div class="hologram"></div>
+                <div class="ring" style="animation-delay: 0.5s;"></div>
+            </div>
+            <div class="char char-3" data-text="기">
+                기
+                <div class="char-depth">기</div>
+                <div class="neon-glow"></div>
+                <div class="hologram"></div>
+                <div class="ring" style="animation-delay: 1s;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 파티클 시스템
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.size = Math.random() * 3 + 1;
+                this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                this.life = Math.random() * 100 + 100;
+                this.maxLife = this.life;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+
+                if (this.life <= 0 || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                const alpha = this.life / this.maxLife;
+                ctx.fillStyle = this.color.replace(')', `, ${alpha})`).replace('hsl', 'hsla');
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 연결선
+                particles.forEach(p => {
+                    const dx = this.x - p.x;
+                    const dy = this.y - p.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 100) {
+                        ctx.strokeStyle = `rgba(0, 255, 255, ${0.2 * (1 - distance / 100) * alpha})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y);
+                        ctx.lineTo(p.x, p.y);
+                        ctx.stroke();
+                    }
+                });
+            }
+        }
+
+        const particles = Array.from({ length: 100 }, () => new Particle());
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        // 리사이즈
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // 마우스 인터랙션
+        let mouseX = 0;
+        let mouseY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+
+            // 마우스 주변 파티클 생성
+            if (Math.random() < 0.3) {
+                const p = new Particle();
+                p.x = mouseX;
+                p.y = mouseY;
+                p.vx = (Math.random() - 0.5) * 5;
+                p.vy = (Math.random() - 0.5) * 5;
+            }
+        });
+
+        // 글자 클릭 이벤트
+        const chars = document.querySelectorAll('.char');
+        
+        chars.forEach((char, index) => {
+            char.addEventListener('click', () => {
+                // 폭발 효과
+                createExplosion(char);
+                
+                // 사운드 효과 (웹 오디오)
+                playSound(200 + index * 200);
+                
+                // 화면 진동
+                if (navigator.vibrate) {
+                    navigator.vibrate(100);
+                }
+            });
+        });
+
+        function createExplosion(element) {
+            const rect = element.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 30; i++) {
+                const p = new Particle();
+                p.x = centerX;
+                p.y = centerY;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 10 + 5;
+                p.vx = Math.cos(angle) * speed;
+                p.vy = Math.sin(angle) * speed;
+                p.size = Math.random() * 5 + 2;
+            }
+        }
+
+        function playSound(frequency) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = 'sine';
+
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        // 3D 회전 효과
+        const scene = document.querySelector('.scene');
+        
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 20;
+            const y = (e.clientY / window.innerHeight - 0.5) * -20;
+            
+            scene.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+        });
+
+        // 키보드 인터랙션
+        let keySequence = [];
+        
+        document.addEventListener('keydown', (e) => {
+            keySequence.push(e.key);
+            keySequence = keySequence.slice(-3);
+
+            // "vend" 입력 시 자판기 페이지로 이동
+            if (keySequence.join('').toLowerCase().includes('ven')) {
+                window.location.href = 'vending-machine.html';
+            }
+
+            // 스페이스바로 색상 변경
+            if (e.key === ' ') {
+                chars.forEach(char => {
+                    char.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
+                });
+            }
+        });
+
+        // 더블클릭으로 풀스크린
+        document.addEventListener('dblclick', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // 자동 컬러 체인지
+        setInterval(() => {
+            const hue = Math.random() * 360;
+            document.documentElement.style.setProperty('--hue', hue);
+        }, 5000);
+    </script>
+</body>
+</html>
