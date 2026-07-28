@@ -354,6 +354,29 @@
             box-shadow: 0 0 30px rgba(227, 255, 0, 0.6);
         }
 
+        .vending-btn {
+            position: fixed;
+            top: 620px;
+            left: 20px;
+            padding: 15px 30px;
+            background: rgba(255, 0, 255, 0.2);
+            color: #FF00FF;
+            text-decoration: none;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 2px solid rgba(255, 0, 255, 0.4);
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .vending-btn:hover {
+            background: rgba(255, 0, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.6), 0 0 50px rgba(0, 255, 255, 0.4);
+        }
+
         @media (max-width: 768px) {
             .title {
                 top: -60px;
@@ -380,6 +403,7 @@
     <a href="diamond-skull.html" class="skull-btn">💎 Skull</a>
     <a href="truman-escape.html" class="truman-btn">🚪 Truman</a>
     <a href="section.html" class="section-btn">✂️ Section</a>
+    <a href="vending-machine.html" class="vending-btn">🎰 Vending</a>
     
     <div class="container">
         <div class="title">FACE OF GRADIENT</div>
