@@ -76,7 +76,7 @@
             }
         }
 
-        /* 페이지 전환 효과 - 리얼 크레마 */
+        /* 페이지 전환 효과 - 실제 크레마 이미지 */
         .transition-overlay {
             position: fixed;
             top: 0;
@@ -84,21 +84,129 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 1000;
+            z-index: 10000;
             opacity: 0;
-            transition: opacity 0.8s ease;
+            background-image: url('crema.jpg');
+            background-size: cover;
+            background-position: center;
+            transform: scale(0.8);
+            filter: blur(0px) brightness(1);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .transition-overlay.active {
             opacity: 1;
+            transform: scale(1.2);
+            filter: blur(3px) brightness(1.1);
         }
 
         .transition-overlay::before {
             content: '';
             position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center,
+                transparent 0%,
+                transparent 30%,
+                rgba(239, 235, 233, 0.3) 60%,
+                rgba(239, 235, 233, 0.7) 100%);
+            animation: crema-pulse 1.5s ease-in-out;
+        }
+
+        @keyframes crema-pulse {
+            0%, 100% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        /* 인트로 페이지 */
+        .intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9000;
+            background-image: url('crema.jpg');
+            background-size: cover;
+            background-position: center;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .intro-screen.hidden {
+            opacity: 0;
+            transform: scale(1.1);
+            pointer-events: none;
+        }
+
+        .intro-content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 60px 50px;
+            border-radius: 30px;
+            box-shadow: 0 30px 80px rgba(62, 39, 35, 0.3);
+            animation: intro-fade-in 1s ease;
+        }
+
+        @keyframes intro-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .intro-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            color: var(--coffee-dark);
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .intro-subtitle {
+            font-size: 1.4rem;
+            color: var(--coffee-medium);
+            margin-bottom: 40px;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        .intro-btn {
+            padding: 20px 60px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--coffee-dark), var(--coffee-medium));
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><radialGradient id="bean" cx="40%" cy="40%"><stop offset="0%" style="stop-color:%233E2723;stop-opacity:1" /><stop offset="50%" style="stop-color:%236D4C41;stop-opacity:1" /><stop offset="100%" style="stop-color:%232C1810;stop-opacity:1" /></radialGradient></defs><ellipse cx="16" cy="16" rx="10" ry="14" fill="url(%23bean)" /><path d="M 16 6 Q 18 16 16 26" stroke="%23D7CCC8" stroke-width="1.5" fill="none" opacity="0.6"/></svg>'), pointer;
+            box-shadow: 0 10px 40px rgba(62, 39, 35, 0.4);
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .intro-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 50px rgba(62, 39, 35, 0.5);
+        }
+
+        .intro-btn:active {
+            transform: translateY(-2px);
+        }
             height: 0;
             border-radius: 50%;
             background: radial-gradient(circle at center, 
@@ -474,6 +582,16 @@
     </style>
 </head>
 <body>
+    <!-- 인트로 화면 -->
+    <div class="intro-screen" id="introScreen">
+        <div class="intro-content">
+            <div class="intro-title">☕</div>
+            <h1 class="intro-title">나만의 커피 원두 찾기</h1>
+            <p class="intro-subtitle">5가지 질문으로 당신의 취향을 분석하고<br>완벽한 원두를 추천해드립니다</p>
+            <button class="intro-btn" onclick="startTest()">테스트 시작하기</button>
+        </div>
+    </div>
+
     <!-- 크레마 거품 배경 -->
     <div class="crema-background" id="cremaBackground"></div>
     
@@ -635,6 +753,25 @@
         // 상태
         let currentQuestion = 0;
         let answers = {};
+
+        // 인트로 화면에서 테스트 시작
+        function startTest() {
+            const intro = document.getElementById('introScreen');
+            const overlay = document.getElementById('transitionOverlay');
+            
+            // 크레마 전환 효과 활성화
+            overlay.classList.add('active');
+            
+            // 400ms 후 인트로 숨김
+            setTimeout(() => {
+                intro.classList.add('hidden');
+            }, 400);
+            
+            // 800ms 후 크레마 효과 제거
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 800);
+        }
 
         // 초기화
         function init() {
