@@ -27,6 +27,7 @@
             background: linear-gradient(135deg, var(--cream) 0%, var(--foam) 100%);
             min-height: 100vh;
             overflow-x: hidden;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><radialGradient id="bean" cx="40%" cy="40%"><stop offset="0%" style="stop-color:%233E2723;stop-opacity:1" /><stop offset="50%" style="stop-color:%236D4C41;stop-opacity:1" /><stop offset="100%" style="stop-color:%232C1810;stop-opacity:1" /></radialGradient></defs><ellipse cx="16" cy="16" rx="10" ry="14" fill="url(%23bean)" /><path d="M 16 6 Q 18 16 16 26" stroke="%23D7CCC8" stroke-width="1.5" fill="none" opacity="0.6"/><ellipse cx="12" cy="10" rx="2" ry="3" fill="%234A352F" opacity="0.4"/><ellipse cx="20" cy="12" rx="1.5" ry="2" fill="%234A352F" opacity="0.3"/></svg>'), auto;
         }
 
         /* 크레마 거품 배경 */
@@ -44,11 +45,18 @@
         .bubble {
             position: absolute;
             border-radius: 50%;
-            background: radial-gradient(circle at 30% 30%, 
-                rgba(255, 255, 255, 0.8), 
-                rgba(215, 204, 200, 0.3));
+            background: radial-gradient(circle at 35% 35%, 
+                rgba(255, 253, 245, 0.95),
+                rgba(235, 220, 200, 0.85) 30%,
+                rgba(200, 180, 160, 0.7) 60%,
+                rgba(180, 150, 120, 0.5));
+            box-shadow: 
+                inset -5px -5px 15px rgba(180, 150, 120, 0.4),
+                inset 5px 5px 10px rgba(255, 255, 255, 0.6),
+                0 5px 20px rgba(200, 180, 160, 0.3);
             animation: float-up 8s infinite ease-in-out;
             opacity: 0;
+            border: 1px solid rgba(235, 220, 200, 0.6);
         }
 
         @keyframes float-up {
@@ -68,27 +76,104 @@
             }
         }
 
-        /* 페이지 전환 효과 */
+        /* 페이지 전환 효과 - 리얼 크레마 */
         .transition-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, 
-                rgba(255, 255, 255, 0.9) 0%, 
-                rgba(215, 204, 200, 0.8) 50%,
-                transparent 100%);
             pointer-events: none;
             z-index: 1000;
             opacity: 0;
-            transform: scale(0);
-            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            transition: opacity 0.8s ease;
         }
 
         .transition-overlay.active {
             opacity: 1;
-            transform: scale(3);
+        }
+
+        .transition-overlay::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at center, 
+                rgba(255, 250, 240, 0.98) 0%,
+                rgba(245, 230, 210, 0.95) 15%,
+                rgba(225, 200, 170, 0.9) 30%,
+                rgba(200, 175, 145, 0.85) 45%,
+                rgba(180, 155, 125, 0.75) 60%,
+                rgba(160, 135, 105, 0.6) 75%,
+                rgba(140, 115, 85, 0.4) 85%,
+                rgba(120, 95, 65, 0.2) 95%,
+                transparent 100%);
+            box-shadow: 
+                0 0 50px rgba(200, 175, 145, 0.8),
+                0 0 100px rgba(180, 155, 125, 0.6),
+                0 0 150px rgba(160, 135, 105, 0.4),
+                inset 0 0 50px rgba(255, 250, 240, 0.5);
+            transform: translate(-50%, -50%) scale(0);
+            transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .transition-overlay.active::before {
+            width: 300vmax;
+            height: 300vmax;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .transition-overlay::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle at 40% 40%, 
+                rgba(255, 255, 255, 0.4) 0%,
+                rgba(235, 220, 200, 0.3) 30%,
+                transparent 60%);
+            transform: translate(-50%, -50%) scale(0);
+            transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            filter: blur(20px);
+        }
+
+        .transition-overlay.active::after {
+            width: 200vmax;
+            height: 200vmax;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* 크레마 텍스처 */
+        @keyframes crema-texture {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .transition-overlay.active {
+            animation: crema-texture 2s ease-in-out;
+            background-image: 
+                repeating-radial-gradient(circle at 20% 30%, 
+                    transparent 0px, 
+                    rgba(255, 250, 240, 0.03) 2px, 
+                    transparent 4px),
+                repeating-radial-gradient(circle at 80% 70%, 
+                    transparent 0px, 
+                    rgba(200, 180, 160, 0.02) 3px, 
+                    transparent 6px);
+            background-size: 50px 50px, 80px 80px;
         }
 
         /* 메인 컨테이너 */
@@ -196,7 +281,7 @@
             border: 2px solid transparent;
             border-radius: 15px;
             padding: 20px 25px;
-            cursor: pointer;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><radialGradient id="bean" cx="40%" cy="40%"><stop offset="0%" style="stop-color:%233E2723;stop-opacity:1" /><stop offset="50%" style="stop-color:%236D4C41;stop-opacity:1" /><stop offset="100%" style="stop-color:%232C1810;stop-opacity:1" /></radialGradient></defs><ellipse cx="16" cy="16" rx="10" ry="14" fill="url(%23bean)" /><path d="M 16 6 Q 18 16 16 26" stroke="%23D7CCC8" stroke-width="1.5" fill="none" opacity="0.6"/><ellipse cx="12" cy="10" rx="2" ry="3" fill="%234A352F" opacity="0.4"/><ellipse cx="20" cy="12" rx="1.5" ry="2" fill="%234A352F" opacity="0.3"/></svg>'), pointer;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
@@ -253,7 +338,7 @@
             border-radius: 50px;
             font-size: 1.1rem;
             font-weight: 600;
-            cursor: pointer;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><defs><radialGradient id="bean" cx="40%" cy="40%"><stop offset="0%" style="stop-color:%233E2723;stop-opacity:1" /><stop offset="50%" style="stop-color:%236D4C41;stop-opacity:1" /><stop offset="100%" style="stop-color:%232C1810;stop-opacity:1" /></radialGradient></defs><ellipse cx="16" cy="16" rx="10" ry="14" fill="url(%23bean)" /><path d="M 16 6 Q 18 16 16 26" stroke="%23D7CCC8" stroke-width="1.5" fill="none" opacity="0.6"/><ellipse cx="12" cy="10" rx="2" ry="3" fill="%234A352F" opacity="0.4"/><ellipse cx="20" cy="12" rx="1.5" ry="2" fill="%234A352F" opacity="0.3"/></svg>'), pointer;
             transition: all 0.3s ease;
             font-family: 'Noto Sans KR', sans-serif;
         }
@@ -558,18 +643,23 @@
             updateProgress();
         }
 
-        // 거품 생성
+        // 거품 생성 (더 많고 디테일하게)
         function createBubbles() {
             const container = document.getElementById('cremaBackground');
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 30; i++) {
                 const bubble = document.createElement('div');
                 bubble.className = 'bubble';
-                const size = Math.random() * 100 + 50;
+                const size = Math.random() * 120 + 40;
                 bubble.style.width = size + 'px';
                 bubble.style.height = size + 'px';
                 bubble.style.left = Math.random() * 100 + '%';
                 bubble.style.animationDelay = Math.random() * 8 + 's';
-                bubble.style.animationDuration = (Math.random() * 4 + 6) + 's';
+                bubble.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                
+                // 랜덤 투명도로 깊이감
+                const opacity = 0.3 + Math.random() * 0.4;
+                bubble.style.opacity = opacity;
+                
                 container.appendChild(bubble);
             }
         }
