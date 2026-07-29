@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 커피 원두 찾기 ☕</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;600;700&family=Playfair+Display:wght@700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --coffee-dark: #3E2723;
+            --coffee-medium: #6D4C41;
+            --coffee-light: #A1887F;
+            --cream: #EFEBE9;
+            --foam: #F5F5F5;
+            --accent: #D7CCC8;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, var(--cream) 0%, var(--foam) 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 크레마 거품 배경 */
+        .crema-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, 
+                rgba(255, 255, 255, 0.8), 
+                rgba(215, 204, 200, 0.3));
+            animation: float-up 8s infinite ease-in-out;
+            opacity: 0;
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            100% {
+                transform: translateY(-100px) scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* 페이지 전환 효과 */
+        .transition-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, 
+                rgba(255, 255, 255, 0.9) 0%, 
+                rgba(215, 204, 200, 0.8) 50%,
+                transparent 100%);
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .transition-overlay.active {
+            opacity: 1;
+            transform: scale(3);
+        }
+
+        /* 메인 컨테이너 */
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 헤더 */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            color: var(--coffee-dark);
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--coffee-medium);
+            font-weight: 300;
+        }
+
+        /* 프로그레스 바 */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(161, 136, 127, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--coffee-medium), var(--coffee-dark));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(109, 76, 65, 0.5);
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            color: var(--coffee-medium);
+            font-size: 0.9rem;
+        }
+
+        /* 질문 카드 */
+        .question-card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            animation: slide-in 0.5s ease;
+        }
+
+        @keyframes slide-in {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .question-number {
+            color: var(--coffee-light);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.5rem;
+            color: var(--coffee-dark);
+            font-weight: 600;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        /* 선택지 */
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option {
+            background: var(--foam);
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 20px 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(215, 204, 200, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .option:hover::before {
+            left: 100%;
+        }
+
+        .option:hover {
+            border-color: var(--coffee-light);
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .option.selected {
+            background: var(--coffee-dark);
+            border-color: var(--coffee-dark);
+            color: white;
+        }
+
+        .option-emoji {
+            font-size: 1.5rem;
+            margin-right: 15px;
+        }
+
+        .option-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* 버튼 */
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .btn-primary {
+            background: var(--coffee-dark);
+            color: white;
+            box-shadow: 0 5px 20px rgba(62, 39, 35, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--coffee-medium);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(62, 39, 35, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--accent);
+            color: var(--coffee-dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--coffee-light);
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 결과 페이지 */
+        .result-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            animation: slide-in 0.5s ease;
+        }
+
+        .result-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            color: var(--coffee-dark);
+            margin-bottom: 15px;
+        }
+
+        .result-subtitle {
+            font-size: 1.2rem;
+            color: var(--coffee-medium);
+            margin-bottom: 30px;
+            font-weight: 300;
+        }
+
+        .result-description {
+            font-size: 1.1rem;
+            color: var(--coffee-medium);
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .tag {
+            background: var(--accent);
+            color: var(--coffee-dark);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .brewing-tip {
+            background: var(--foam);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 30px 0;
+            border-left: 4px solid var(--coffee-dark);
+        }
+
+        .brewing-tip-title {
+            font-weight: 600;
+            color: var(--coffee-dark);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .brewing-tip-text {
+            color: var(--coffee-medium);
+            line-height: 1.6;
+        }
+
+        /* 히든 */
+        .hidden {
+            display: none;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2rem;
+            }
+
+            .question-text {
+                font-size: 1.2rem;
+            }
+
+            .question-card, .result-card {
+                padding: 30px 20px;
+            }
+
+            .result-title {
+                font-size: 2rem;
+            }
+
+            .btn {
+                padding: 12px 30px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 크레마 거품 배경 -->
+    <div class="crema-background" id="cremaBackground"></div>
+    
+    <!-- 페이지 전환 효과 -->
+    <div class="transition-overlay" id="transitionOverlay"></div>
+
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <div class="logo">☕</div>
+            <div class="subtitle">나만의 커피 원두 찾기</div>
+        </div>
+
+        <!-- 프로그레스 바 -->
+        <div class="progress-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text" id="progressText">1 / 5</div>
+
+        <!-- 질문 영역 -->
+        <div id="questionArea"></div>
+
+        <!-- 버튼 -->
+        <div class="btn-container">
+            <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()">이전</button>
+            <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>다음</button>
+        </div>
+
+        <!-- 결과 영역 (처음엔 숨김) -->
+        <div id="resultArea" class="hidden"></div>
+    </div>
+
+    <script>
+        // 질문 데이터
+        const questions = [
+            {
+                number: "Q1",
+                text: "커피를 마실 때 선호하는 향미 느낌은?",
+                options: [
+                    { emoji: "🍋", text: "과즙미 팡팡! 상큼한 과일이나 꽃 향", value: "bright" },
+                    { emoji: "🌰", text: "고소한 견과류나 초콜릿의 균형 잡힌 맛", value: "balanced" },
+                    { emoji: "🍫", text: "묵직하고 쌉싸름한 카카오/스모키한 맛", value: "bold" }
+                ]
+            },
+            {
+                number: "Q2",
+                text: "입안에 감도는 바디감(무게감)은?",
+                options: [
+                    { emoji: "🍃", text: "차(Tea)처럼 가볍고 깔끔하게", value: "light" },
+                    { emoji: "☁️", text: "적당한 유분감과 부드러운 목넘김", value: "medium" },
+                    { emoji: "🏔️", text: "묵직한 질감과 오래 남는 진한 여운", value: "heavy" }
+                ]
+            },
+            {
+                number: "Q3",
+                text: "주로 어떤 방식으로 추출하시나요?",
+                options: [
+                    { emoji: "💧", text: "드립/핸드드립/프렌치프레스", value: "drip" },
+                    { emoji: "☕", text: "에스프레소 머신/모카포트", value: "espresso" },
+                    { emoji: "🧊", text: "콜드브루/락떼(우유 조합)", value: "cold" }
+                ]
+            },
+            {
+                number: "Q4",
+                text: "선호하는 로스팅 정도는?",
+                options: [
+                    { emoji: "🌅", text: "라이트~미디엄 (영롱한 과일 향)", value: "light" },
+                    { emoji: "🌤️", text: "미디엄 다크 (고소함과 밸런스)", value: "medium" },
+                    { emoji: "🌑", text: "다크 (진하고 쌉싸름하며 묵직함)", value: "dark" }
+                ]
+            },
+            {
+                number: "Q5",
+                text: "카페인에 대한 부담감은?",
+                options: [
+                    { emoji: "⚡", text: "상관없음! 단단한 카페인 충전 필요", value: "high" },
+                    { emoji: "😌", text: "밤엔 부담되지만 낮엔 괜찮음", value: "medium" },
+                    { emoji: "🌙", text: "카페인 최소화 (디카페인 선호)", value: "decaf" }
+                ]
+            }
+        ];
+
+        // 원두 데이터베이스
+        const coffeeBeans = [
+            {
+                name: "에티오피아 예가체프 G1",
+                icon: "🌸",
+                subtitle: "상큼한 자스민 향과 레몬 테이스팅",
+                description: "플로럴한 향과 시트러스 산미가 특징인 에티오피아 대표 원두입니다. 가벼운 바디감과 깔끔한 뒷맛이 매력적이며, 핸드드립으로 추출했을 때 그 진가를 발휘합니다.",
+                tags: ["#자스민", "#레몬", "#상큼함", "#플로럴"],
+                brewing: "핸드드립 권장 | 90-92°C | 1:15 비율 | 2분 30초",
+                match: { acidity: "bright", body: "light", method: "drip", roast: "light", caffeine: ["high", "medium"] }
+            },
+            {
+                name: "콜롬비아 수프레모",
+                icon: "🌰",
+                subtitle: "고소한 헤이즐넛과 밀크 초콜릿",
+                description: "균형잡힌 산미와 바디감, 고소한 견과류 향이 조화로운 만능 원두입니다. 드립과 에스프레소 모두 훌륭하며, 첫 스페셜티 커피로 추천드립니다.",
+                tags: ["#헤이즐넛", "#초콜릿", "#밸런스", "#고소함"],
+                brewing: "드립/에스프레소 | 88-90°C | 1:16 비율 | 부드러운 추출",
+                match: { acidity: "balanced", body: "medium", method: ["drip", "espresso"], roast: "medium", caffeine: ["high", "medium"] }
+            },
+            {
+                name: "과테말라 안티구아",
+                icon: "🍫",
+                subtitle: "스모키하고 묵직한 카카오 향",
+                description: "화산재 토양에서 자란 강렬한 풍미의 원두입니다. 진한 초콜릿과 스모키한 향, 묵직한 바디감이 특징이며 라떼나 에스프레소로 최적입니다.",
+                tags: ["#카카오", "#스모키", "#진함", "#묵직함"],
+                brewing: "에스프레소/라떼 | 92-94°C | 1:2 비율 | 25-30초 추출",
+                match: { acidity: "bold", body: "heavy", method: ["espresso", "cold"], roast: "dark", caffeine: ["high", "medium"] }
+            },
+            {
+                name: "브라질 산토스 NY2",
+                icon: "🥜",
+                subtitle: "부드러운 넛티함과 캐러멜",
+                description: "낮은 산미와 부드러운 바디감, 고소한 땅콩과 캐러멜 향이 특징입니다. 누구나 부담없이 즐길 수 있으며, 우유와의 궁합이 뛰어납니다.",
+                tags: ["#땅콩", "#캐러멜", "#부드러움", "#고소함"],
+                brewing: "드립/콜드브루 | 88°C | 1:17 비율 | 우유 조합 추천",
+                match: { acidity: "balanced", body: ["medium", "light"], method: "cold", roast: "medium", caffeine: ["high", "medium"] }
+            },
+            {
+                name: "케냐 AA",
+                icon: "🍒",
+                subtitle: "베리류의 강렬한 산미와 와인감",
+                description: "블랙커런트와 체리의 강렬한 산미가 인상적인 원두입니다. 복합적이고 풍부한 과일 향과 와인 같은 바디감이 특징이며, 스페셜티 애호가들에게 사랑받습니다.",
+                tags: ["#베리", "#와인감", "#복합미", "#산미"],
+                brewing: "핸드드립 | 88-90°C | 1:15 비율 | 천천히 추출",
+                match: { acidity: "bright", body: ["medium", "heavy"], method: "drip", roast: "light", caffeine: "high" }
+            },
+            {
+                name: "디카페인 스위스 워터",
+                icon: "🌙",
+                subtitle: "카페인 걱정 없는 달콤한 향",
+                description: "화학 약품 없이 물만으로 카페인을 제거한 건강한 디카페인입니다. 군고구마와 초콜릿의 달콤함이 특징이며, 밤에도 부담없이 즐길 수 있습니다.",
+                tags: ["#디카페인", "#군고구마", "#초콜릿", "#건강"],
+                brewing: "드립/콜드브루 | 90°C | 1:16 비율 | 저녁 시간 추천",
+                match: { acidity: ["balanced", "bold"], body: "medium", method: ["drip", "cold"], roast: "medium", caffeine: "decaf" }
+            },
+            {
+                name: "인도네시아 만델링",
+                icon: "🌿",
+                subtitle: "허브향과 흙내음의 깊은 풍미",
+                description: "독특한 습식 가공법으로 만들어진 개성 강한 원두입니다. 허브, 삼나무, 흙의 향과 묵직한 바디감이 특징이며, 깊은 맛을 좋아하는 분들께 추천합니다.",
+                tags: ["#허브", "#흙", "#우디", "#개성"],
+                brewing: "프렌치프레스 | 92°C | 1:14 비율 | 4분 침출",
+                match: { acidity: "bold", body: "heavy", method: "drip", roast: "dark", caffeine: "high" }
+            },
+            {
+                name: "코스타리카 따라주",
+                icon: "🍯",
+                subtitle: "꿀과 시트러스의 조화",
+                description: "꿀의 달콤함과 오렌지의 상큼함이 절묘하게 균형잡힌 원두입니다. 깨끗한 맛과 부드러운 산미로 커피 입문자부터 마니아까지 모두 만족시킵니다.",
+                tags: ["#꿀", "#오렌지", "#깔끔함", "#밸런스"],
+                brewing: "드립 | 90°C | 1:16 비율 | 3분 추출",
+                match: { acidity: ["bright", "balanced"], body: "light", method: "drip", roast: "light", caffeine: "medium" }
+            }
+        ];
+
+        // 상태
+        let currentQuestion = 0;
+        let answers = {};
+
+        // 초기화
+        function init() {
+            createBubbles();
+            renderQuestion();
+            updateProgress();
+        }
+
+        // 거품 생성
+        function createBubbles() {
+            const container = document.getElementById('cremaBackground');
+            for (let i = 0; i < 20; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                const size = Math.random() * 100 + 50;
+                bubble.style.width = size + 'px';
+                bubble.style.height = size + 'px';
+                bubble.style.left = Math.random() * 100 + '%';
+                bubble.style.animationDelay = Math.random() * 8 + 's';
+                bubble.style.animationDuration = (Math.random() * 4 + 6) + 's';
+                container.appendChild(bubble);
+            }
+        }
+
+        // 질문 렌더링
+        function renderQuestion() {
+            const q = questions[currentQuestion];
+            const html = `
+                <div class="question-card">
+                    <div class="question-number">${q.number}</div>
+                    <div class="question-text">${q.text}</div>
+                    <div class="options">
+                        ${q.options.map((opt, idx) => `
+                            <div class="option" onclick="selectOption(${idx}, '${opt.value}')">
+                                <span class="option-emoji">${opt.emoji}</span>
+                                <span class="option-text">${opt.text}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('questionArea').innerHTML = html;
+
+            // 이전 답변 복원
+            if (answers[currentQuestion] !== undefined) {
+                const options = document.querySelectorAll('.option');
+                options[answers[currentQuestion].index].classList.add('selected');
+                document.getElementById('nextBtn').disabled = false;
+            }
+        }
+
+        // 선택
+        function selectOption(index, value) {
+            // 모든 선택 해제
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+
+            // 선택된 옵션 표시
+            document.querySelectorAll('.option')[index].classList.add('selected');
+
+            // 답변 저장
+            answers[currentQuestion] = { index, value };
+
+            // 다음 버튼 활성화
+            document.getElementById('nextBtn').disabled = false;
+        }
+
+        // 다음 질문
+        function nextQuestion() {
+            if (answers[currentQuestion] === undefined) return;
+
+            // 전환 효과
+            triggerTransition();
+
+            setTimeout(() => {
+                currentQuestion++;
+
+                if (currentQuestion >= questions.length) {
+                    // 결과 계산
+                    showResult();
+                } else {
+                    // 다음 질문
+                    renderQuestion();
+                    updateProgress();
+                    updateButtons();
+                }
+            }, 800);
+        }
+
+        // 이전 질문
+        function prevQuestion() {
+            if (currentQuestion === 0) return;
+
+            triggerTransition();
+
+            setTimeout(() => {
+                currentQuestion--;
+                renderQuestion();
+                updateProgress();
+                updateButtons();
+            }, 800);
+        }
+
+        // 전환 효과 트리거
+        function triggerTransition() {
+            const overlay = document.getElementById('transitionOverlay');
+            overlay.classList.add('active');
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 800);
+        }
+
+        // 프로그레스 업데이트
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `${currentQuestion + 1} / ${questions.length}`;
+        }
+
+        // 버튼 상태 업데이트
+        function updateButtons() {
+            document.getElementById('prevBtn').style.display = currentQuestion === 0 ? 'none' : 'inline-block';
+            document.getElementById('nextBtn').disabled = answers[currentQuestion] === undefined;
+        }
+
+        // 결과 계산
+        function calculateResult() {
+            // 답변 추출
+            const acidity = answers[0].value;
+            const body = answers[1].value;
+            const method = answers[2].value;
+            const roast = answers[3].value;
+            const caffeine = answers[4].value;
+
+            // 매칭 점수 계산
+            let bestMatch = null;
+            let bestScore = 0;
+
+            coffeeBeans.forEach(bean => {
+                let score = 0;
+
+                // 산미 매칭
+                if (bean.match.acidity === acidity || 
+                    (Array.isArray(bean.match.acidity) && bean.match.acidity.includes(acidity))) {
+                    score += 3;
+                }
+
+                // 바디 매칭
+                if (bean.match.body === body || 
+                    (Array.isArray(bean.match.body) && bean.match.body.includes(body))) {
+                    score += 2;
+                }
+
+                // 추출 방식 매칭
+                if (bean.match.method === method || 
+                    (Array.isArray(bean.match.method) && bean.match.method.includes(method))) {
+                    score += 2;
+                }
+
+                // 로스팅 매칭
+                if (bean.match.roast === roast) {
+                    score += 2;
+                }
+
+                // 카페인 매칭
+                if (bean.match.caffeine === caffeine || 
+                    (Array.isArray(bean.match.caffeine) && bean.match.caffeine.includes(caffeine))) {
+                    score += 1;
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = bean;
+                }
+            });
+
+            return bestMatch;
+        }
+
+        // 결과 표시
+        function showResult() {
+            const result = calculateResult();
+
+            document.getElementById('questionArea').classList.add('hidden');
+            document.querySelector('.progress-container').classList.add('hidden');
+            document.querySelector('.progress-text').classList.add('hidden');
+            document.querySelector('.btn-container').classList.add('hidden');
+
+            const html = `
+                <div class="result-card">
+                    <div class="result-icon">${result.icon}</div>
+                    <div class="result-title">${result.name}</div>
+                    <div class="result-subtitle">${result.subtitle}</div>
+                    
+                    <div class="tags">
+                        ${result.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                    
+                    <div class="result-description">${result.description}</div>
+                    
+                    <div class="brewing-tip">
+                        <div class="brewing-tip-title">☕ 추천 추출법</div>
+                        <div class="brewing-tip-text">${result.brewing}</div>
+                    </div>
+                    
+                    <div class="btn-container">
+                        <button class="btn btn-secondary" onclick="shareResult()">결과 공유하기 📤</button>
+                        <button class="btn btn-primary" onclick="restart()">다시 테스트 🔄</button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('resultArea').innerHTML = html;
+            document.getElementById('resultArea').classList.remove('hidden');
+        }
+
+        // 공유하기
+        function shareResult() {
+            const resultText = `나만의 커피 원두: ${document.querySelector('.result-title').textContent}\n${window.location.href}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: '나만의 커피 원두 찾기',
+                    text: resultText,
+                    url: window.location.href
+                });
+            } else {
+                navigator.clipboard.writeText(resultText).then(() => {
+                    alert('결과가 클립보드에 복사되었습니다! 📋');
+                });
+            }
+        }
+
+        // 재시작
+        function restart() {
+            currentQuestion = 0;
+            answers = {};
+            
+            document.getElementById('resultArea').classList.add('hidden');
+            document.getElementById('questionArea').classList.remove('hidden');
+            document.querySelector('.progress-container').classList.remove('hidden');
+            document.querySelector('.progress-text').classList.remove('hidden');
+            document.querySelector('.btn-container').classList.remove('hidden');
+            
+            renderQuestion();
+            updateProgress();
+            updateButtons();
+            
+            triggerTransition();
+        }
+
+        // 초기 실행
+        init();
+    </script>
+</body>
+</html>
