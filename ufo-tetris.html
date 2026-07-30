@@ -440,7 +440,7 @@
         // 게임 설정
         const ROWS = 20;
         const COLS = 10;
-        const DROP_SPEED = 300; // 훨씬 빠른 난이도 (300ms)
+        const DROP_SPEED = 200; // 더 빠른 난이도 (200ms)
         const UFO_CHANCE = 0.20; // 20% 확률로 UFO 칸 생성 (블록 5개중 1개)
 
         // 테트리스 블록 모양
@@ -619,15 +619,15 @@
         // 라인 클리어
         function clearLines() {
             let linesCleared = 0;
+            let ufoCols = new Set(); // UFO가 있던 열들
             
-            // 가로줄 확인 및 UFO 세로줄 제거
+            // 가로줄 확인 및 UFO 세로줄 수집
             for (let row = ROWS - 1; row >= 0; row--) {
                 if (board[row].every(cell => cell.filled)) {
                     // 이 줄에 UFO 칸이 있는지 확인
-                    const ufoCols = [];
                     board[row].forEach((cell, col) => {
                         if (cell.isUFO) {
-                            ufoCols.push(col);
+                            ufoCols.add(col);
                         }
                     });
                     
@@ -635,62 +635,34 @@
                     board.splice(row, 1);
                     board.unshift(Array(COLS).fill(null).map(() => ({ filled: false, isUFO: false })));
                     linesCleared++;
-                    
-                    // UFO가 있었다면 해당 세로줄도 제거
-                    if (ufoCols.length > 0) {
-                        ufoCols.forEach(col => {
-                            clearUFOColumn(col);
-                        });
-                    }
-                    
                     row++; // 다시 확인
                 }
             }
             
             if (linesCleared > 0) {
                 score += linesCleared * 100;
-                updateBoard();
-            }
-        }
-
-        // UFO 세로줄 제거
-        function clearUFOColumn(col) {
-            // 애니메이션
-            for (let row = 0; row < ROWS; row++) {
-                const cell = document.getElementById(`cell-${row}-${col}`);
-                if (board[row][col].filled) {
-                    cell.style.transition = 'all 0.3s';
-                    cell.style.transform = 'scale(1.3)';
-                    cell.style.opacity = '0';
-                }
-            }
-            
-            setTimeout(() => {
-                // 세로줄 제거
-                for (let row = 0; row < ROWS; row++) {
-                    board[row][col] = { filled: false, isUFO: false };
+                
+                // UFO 세로줄 제거 (지연 없이 즉시)
+                if (ufoCols.size > 0) {
+                    ufoCols.forEach(col => {
+                        clearUFOColumnImmediate(col);
+                    });
                 }
                 
-                // 중력 적용 (해당 열에만)
-                applyGravityToColumn(col);
                 updateBoard();
-            }, 300);
-            
-            score += 50; // 세로줄 보너스
+            }
         }
 
-        // 특정 열에만 중력 적용
-        function applyGravityToColumn(col) {
-            let writeRow = ROWS - 1;
-            for (let row = ROWS - 1; row >= 0; row--) {
+        // UFO 세로줄 즉시 제거 (버그 수정)
+        function clearUFOColumnImmediate(col) {
+            // 해당 열의 모든 블록 제거
+            for (let row = 0; row < ROWS; row++) {
                 if (board[row][col].filled) {
-                    if (row !== writeRow) {
-                        board[writeRow][col] = board[row][col];
-                        board[row][col] = { filled: false, isUFO: false };
-                    }
-                    writeRow--;
+                    board[row][col] = { filled: false, isUFO: false };
                 }
             }
+            
+            score += 50; // 세로줄 보너스
         }
 
         // 보드 업데이트
