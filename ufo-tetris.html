@@ -284,6 +284,58 @@
             margin: 10px 0;
         }
 
+        /* 이름 입력 모달 */
+        .name-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 0, 30, 0.95);
+            border: 3px solid #8b5cf6;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            z-index: 2000;
+            box-shadow: 0 0 50px rgba(139, 92, 246, 0.8);
+            display: none;
+        }
+
+        .name-modal.show {
+            display: block;
+            animation: popup 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        .name-modal h2 {
+            color: #fbbf24;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
+        }
+
+        .name-modal input {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.5rem;
+            padding: 15px 20px;
+            background: rgba(139, 92, 246, 0.1);
+            border: 2px solid #8b5cf6;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 20px;
+        }
+
+        .name-modal input:focus {
+            outline: none;
+            border-color: #fbbf24;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+        }
+
+        .name-modal input::placeholder {
+            color: rgba(167, 139, 250, 0.5);
+        }
+
         /* 반응형 */
         @media (max-width: 768px) {
             .container {
@@ -355,7 +407,8 @@
                     <div>⬅️ ➡️ : 좌우 이동</div>
                     <div>⬆️ : 회전</div>
                     <div>⬇️ : 빠르게 낙하</div>
-                    <div>🛸 : UFO 블록 = 십자 삭제!</div>
+                    <div>SPACE : 즉시 낙하</div>
+                    <div>🛸 : UFO 칸 = 세로줄 삭제!</div>
                 </div>
             </div>
 
@@ -375,12 +428,20 @@
         <button class="btn" style="margin-top: 20px;" onclick="restartGame()">다시 도전</button>
     </div>
 
+    <!-- 이름 입력 모달 -->
+    <div class="name-modal" id="nameModal">
+        <h2>🛸 플레이어 이름 입력</h2>
+        <input type="text" id="playerName" placeholder="이름을 입력하세요" maxlength="10" />
+        <br>
+        <button class="btn" onclick="startGameWithName()">게임 시작</button>
+    </div>
+
     <script>
         // 게임 설정
         const ROWS = 20;
         const COLS = 10;
-        const DROP_SPEED = 500; // 극상 난이도 (빠름)
-        const UFO_CHANCE = 0.03; // 3% 확률로 UFO 블록
+        const DROP_SPEED = 300; // 훨씬 빠른 난이도 (300ms)
+        const UFO_CHANCE = 0.20; // 20% 확률로 UFO 칸 생성 (블록 5개중 1개)
 
         // 테트리스 블록 모양
         const SHAPES = [
@@ -402,6 +463,7 @@
         let isPaused = false;
         let startTime = null;
         let survivalInterval = null;
+        let playerName = '';
 
         // 보드 초기화
         function initBoard() {
@@ -440,13 +502,31 @@
         // 랜덤 블록 생성
         function createPiece() {
             const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
-            const isUFO = Math.random() < UFO_CHANCE;
+            const pieceShape = shape.map(row => [...row]);
+            
+            // UFO 칸 배치 (블록 내 하나의 칸에만)
+            const ufoMap = pieceShape.map(row => row.map(() => false));
+            
+            if (Math.random() < UFO_CHANCE) {
+                // 블록의 모든 칸 중 랜덤하게 하나 선택
+                const filledCells = [];
+                pieceShape.forEach((row, r) => {
+                    row.forEach((val, c) => {
+                        if (val) filledCells.push({ r, c });
+                    });
+                });
+                
+                if (filledCells.length > 0) {
+                    const randomCell = filledCells[Math.floor(Math.random() * filledCells.length)];
+                    ufoMap[randomCell.r][randomCell.c] = true;
+                }
+            }
             
             return {
-                shape: shape.map(row => [...row]),
+                shape: pieceShape,
+                ufoMap: ufoMap,
                 row: 0,
-                col: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2),
-                isUFO: isUFO
+                col: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2)
             };
         }
 
@@ -468,7 +548,7 @@
                             const index = r * 4 + c;
                             const cell = nextElement.children[index];
                             cell.classList.add('filled');
-                            if (nextPiece.isUFO) {
+                            if (nextPiece.ufoMap[r][c]) {
                                 cell.classList.add('ufo');
                             }
                         }
@@ -490,7 +570,7 @@
                                 cell.classList.remove('filled', 'ufo');
                             } else {
                                 cell.classList.add('filled');
-                                if (piece.isUFO) {
+                                if (piece.ufoMap[r][c]) {
                                     cell.classList.add('ufo');
                                 }
                             }
@@ -528,7 +608,7 @@
                         if (row_idx >= 0 && row_idx < ROWS && col_idx >= 0 && col_idx < COLS) {
                             board[row_idx][col_idx] = {
                                 filled: true,
-                                isUFO: currentPiece.isUFO
+                                isUFO: currentPiece.ufoMap[r][c]
                             };
                         }
                     }
@@ -536,92 +616,33 @@
             });
         }
 
-        // UFO 십자 제거 (가로 + 세로)
-        function clearUFOCross(row, col) {
-            let cellsToRemove = new Set();
-            
-            // 가로줄 전체
-            for (let c = 0; c < COLS; c++) {
-                cellsToRemove.add(`${row}-${c}`);
-            }
-            
-            // 세로줄 전체
-            for (let r = 0; r < ROWS; r++) {
-                cellsToRemove.add(`${r}-${col}`);
-            }
-            
-            // 애니메이션과 함께 제거
-            cellsToRemove.forEach(coord => {
-                const [r, c] = coord.split('-').map(Number);
-                const cell = document.getElementById(`cell-${r}-${c}`);
-                cell.style.transition = 'all 0.3s';
-                cell.style.transform = 'scale(1.3)';
-                cell.style.opacity = '0';
-            });
-            
-            setTimeout(() => {
-                cellsToRemove.forEach(coord => {
-                    const [r, c] = coord.split('-').map(Number);
-                    board[r][c] = { filled: false, isUFO: false };
-                    const cell = document.getElementById(`cell-${r}-${c}`);
-                    cell.classList.remove('filled', 'ufo');
-                    cell.style.transform = '';
-                    cell.style.opacity = '';
-                });
-                
-                // 중력 적용
-                applyGravity();
-                updateBoard();
-            }, 300);
-            
-            return cellsToRemove.size;
-        }
-
-        // 중력 적용 (빈 공간으로 블록 떨어뜨리기)
-        function applyGravity() {
-            for (let col = 0; col < COLS; col++) {
-                let writeRow = ROWS - 1;
-                for (let row = ROWS - 1; row >= 0; row--) {
-                    if (board[row][col].filled) {
-                        if (row !== writeRow) {
-                            board[writeRow][col] = board[row][col];
-                            board[row][col] = { filled: false, isUFO: false };
-                        }
-                        writeRow--;
-                    }
-                }
-            }
-        }
-
         // 라인 클리어
         function clearLines() {
             let linesCleared = 0;
-            let ufoCellsFound = [];
             
-            // UFO 블록 찾기
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS; col++) {
-                    if (board[row][col].filled && board[row][col].isUFO) {
-                        ufoCellsFound.push({ row, col });
-                    }
-                }
-            }
-            
-            // UFO 십자 제거
-            if (ufoCellsFound.length > 0) {
-                ufoCellsFound.forEach(({ row, col }) => {
-                    const cleared = clearUFOCross(row, col);
-                    score += cleared * 10;
-                });
-                return; // UFO 제거는 별도 처리
-            }
-            
-            // 일반 라인 클리어
+            // 가로줄 확인 및 UFO 세로줄 제거
             for (let row = ROWS - 1; row >= 0; row--) {
                 if (board[row].every(cell => cell.filled)) {
+                    // 이 줄에 UFO 칸이 있는지 확인
+                    const ufoCols = [];
+                    board[row].forEach((cell, col) => {
+                        if (cell.isUFO) {
+                            ufoCols.push(col);
+                        }
+                    });
+                    
+                    // 가로줄 제거
                     board.splice(row, 1);
                     board.unshift(Array(COLS).fill(null).map(() => ({ filled: false, isUFO: false })));
                     linesCleared++;
+                    
+                    // UFO가 있었다면 해당 세로줄도 제거
+                    if (ufoCols.length > 0) {
+                        ufoCols.forEach(col => {
+                            clearUFOColumn(col);
+                        });
+                    }
+                    
                     row++; // 다시 확인
                 }
             }
@@ -629,6 +650,46 @@
             if (linesCleared > 0) {
                 score += linesCleared * 100;
                 updateBoard();
+            }
+        }
+
+        // UFO 세로줄 제거
+        function clearUFOColumn(col) {
+            // 애니메이션
+            for (let row = 0; row < ROWS; row++) {
+                const cell = document.getElementById(`cell-${row}-${col}`);
+                if (board[row][col].filled) {
+                    cell.style.transition = 'all 0.3s';
+                    cell.style.transform = 'scale(1.3)';
+                    cell.style.opacity = '0';
+                }
+            }
+            
+            setTimeout(() => {
+                // 세로줄 제거
+                for (let row = 0; row < ROWS; row++) {
+                    board[row][col] = { filled: false, isUFO: false };
+                }
+                
+                // 중력 적용 (해당 열에만)
+                applyGravityToColumn(col);
+                updateBoard();
+            }, 300);
+            
+            score += 50; // 세로줄 보너스
+        }
+
+        // 특정 열에만 중력 적용
+        function applyGravityToColumn(col) {
+            let writeRow = ROWS - 1;
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (board[row][col].filled) {
+                    if (row !== writeRow) {
+                        board[writeRow][col] = board[row][col];
+                        board[row][col] = { filled: false, isUFO: false };
+                    }
+                    writeRow--;
+                }
             }
         }
 
@@ -658,11 +719,18 @@
                 currentPiece.shape.map(row => row[i]).reverse()
             );
             
+            const rotatedUFO = currentPiece.ufoMap[0].map((_, i) =>
+                currentPiece.ufoMap.map(row => row[i]).reverse()
+            );
+            
             const oldShape = currentPiece.shape;
+            const oldUFO = currentPiece.ufoMap;
             currentPiece.shape = rotated;
+            currentPiece.ufoMap = rotatedUFO;
             
             if (checkCollision(currentPiece)) {
                 currentPiece.shape = oldShape;
+                currentPiece.ufoMap = oldUFO;
             }
         }
 
@@ -699,6 +767,23 @@
                 }
             } else if (direction === 'rotate') {
                 rotatePiece();
+            } else if (direction === 'hardDrop') {
+                // 스페이스바: 즉시 바닥까지 낙하
+                while (!checkCollision(currentPiece, 1, 0)) {
+                    currentPiece.row++;
+                }
+                drawPiece(currentPiece);
+                lockPiece();
+                clearLines();
+                
+                currentPiece = nextPiece;
+                nextPiece = createPiece();
+                showNextPiece();
+                
+                if (checkCollision(currentPiece)) {
+                    gameOver();
+                    return;
+                }
             }
             
             drawPiece(currentPiece);
@@ -738,11 +823,26 @@
                 case 'ArrowUp':
                     movePiece('rotate');
                     break;
+                case ' ':
+                    e.preventDefault(); // 스페이스바 기본 동작 방지
+                    movePiece('hardDrop');
+                    break;
             }
         });
 
-        // 게임 시작
+        // 게임 시작 (이름 입력 모달 표시)
         function startGame() {
+            document.getElementById('nameModal').classList.add('show');
+            document.getElementById('playerName').focus();
+        }
+
+        // 이름 입력 후 게임 시작
+        function startGameWithName() {
+            const nameInput = document.getElementById('playerName');
+            playerName = nameInput.value.trim() || '익명';
+            
+            document.getElementById('nameModal').classList.remove('show');
+            
             initBoard();
             score = 0;
             startTime = Date.now();
@@ -762,6 +862,13 @@
             document.getElementById('startBtn').textContent = 'RESTART';
             document.getElementById('gameOver').classList.remove('show');
         }
+
+        // Enter 키로 게임 시작
+        document.getElementById('playerName').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                startGameWithName();
+            }
+        });
 
         // 일시정지
         function togglePause() {
@@ -793,7 +900,12 @@
         // 점수 저장 (생존 시간 기준)
         function saveScore(survivalTime) {
             let scores = JSON.parse(localStorage.getItem('ufoTetrisScores') || '[]');
-            scores.push({ time: survivalTime, score: score, date: new Date().toISOString() });
+            scores.push({ 
+                name: playerName,
+                time: survivalTime, 
+                score: score, 
+                date: new Date().toISOString() 
+            });
             scores.sort((a, b) => b.time - a.time);
             scores = scores.slice(0, 10);
             localStorage.setItem('ufoTetrisScores', JSON.stringify(scores));
@@ -817,9 +929,8 @@
                 const item = document.createElement('div');
                 item.className = 'leaderboard-item';
                 item.innerHTML = `
-                    <span class="leaderboard-rank">#${index + 1}</span>
+                    <span class="leaderboard-rank">#${index + 1} ${entry.name}</span>
                     <span class="leaderboard-time">${minutes}:${seconds}</span>
-                    <span>${entry.score}점</span>
                 `;
                 leaderboard.appendChild(item);
             });
