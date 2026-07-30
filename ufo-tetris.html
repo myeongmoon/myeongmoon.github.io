@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛸 UFO TETRIS - Extreme Mode</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(135deg, #0a0015 0%, #1a0033 50%, #0f001f 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 우주 배경 별들 */
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* UFO 배경 */
+        .ufo-bg {
+            position: fixed;
+            width: 80px;
+            height: 80px;
+            opacity: 0.1;
+            animation: float-ufo 15s infinite ease-in-out;
+        }
+
+        @keyframes float-ufo {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(100px, -50px) rotate(10deg); }
+            66% { transform: translate(-80px, 50px) rotate(-10deg); }
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            gap: 30px;
+            padding: 20px;
+        }
+
+        /* 게임 보드 */
+        .game-wrapper {
+            background: rgba(10, 0, 30, 0.8);
+            border: 3px solid #8b5cf6;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 40px rgba(139, 92, 246, 0.5),
+                        inset 0 0 30px rgba(139, 92, 246, 0.1);
+        }
+
+        #gameBoard {
+            display: grid;
+            grid-template-columns: repeat(10, 30px);
+            grid-template-rows: repeat(20, 30px);
+            gap: 2px;
+            background: #000;
+            border: 2px solid #8b5cf6;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+        }
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            background: #0a0015;
+            border: 1px solid rgba(139, 92, 246, 0.1);
+            transition: all 0.2s;
+        }
+
+        .cell.filled {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: 1px solid #a78bfa;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+        }
+
+        .cell.ufo {
+            background: radial-gradient(circle, #fbbf24, #f59e0b, #d97706);
+            border: 2px solid #fcd34d;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.9),
+                        0 0 40px rgba(251, 191, 36, 0.5);
+            animation: ufo-glow 1s infinite alternate;
+        }
+
+        @keyframes ufo-glow {
+            from { box-shadow: 0 0 20px rgba(251, 191, 36, 0.9); }
+            to { box-shadow: 0 0 30px rgba(251, 191, 36, 1), 0 0 60px rgba(251, 191, 36, 0.7); }
+        }
+
+        /* 사이드바 */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-panel {
+            background: rgba(10, 0, 30, 0.8);
+            border: 2px solid #8b5cf6;
+            border-radius: 15px;
+            padding: 20px;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+
+        .info-panel h2 {
+            color: #a78bfa;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
+            text-align: center;
+        }
+
+        .score-display {
+            font-size: 3rem;
+            font-weight: 900;
+            text-align: center;
+            color: #fbbf24;
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
+            margin: 10px 0;
+        }
+
+        .survival-time {
+            font-size: 1.2rem;
+            text-align: center;
+            color: #8b5cf6;
+            margin: 10px 0;
+        }
+
+        .controls {
+            font-size: 0.9rem;
+            color: #a78bfa;
+            line-height: 1.8;
+        }
+
+        .controls div {
+            margin: 5px 0;
+        }
+
+        /* 다음 블록 */
+        .next-piece {
+            display: grid;
+            grid-template-columns: repeat(4, 20px);
+            grid-template-rows: repeat(4, 20px);
+            gap: 2px;
+            margin: 20px auto;
+            width: fit-content;
+        }
+
+        .next-cell {
+            width: 20px;
+            height: 20px;
+            background: #0a0015;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .next-cell.filled {
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            border: 1px solid #a78bfa;
+            box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+        }
+
+        .next-cell.ufo {
+            background: radial-gradient(circle, #fbbf24, #f59e0b);
+            border: 1px solid #fcd34d;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+        }
+
+        /* 버튼 */
+        .btn {
+            padding: 12px 30px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: white;
+            border: 2px solid #a78bfa;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* 리더보드 */
+        .leaderboard {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .leaderboard-rank {
+            color: #fbbf24;
+            font-weight: 700;
+        }
+
+        .leaderboard-time {
+            color: #8b5cf6;
+        }
+
+        /* 게임 오버 */
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(10, 0, 30, 0.95);
+            border: 3px solid #8b5cf6;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 0 50px rgba(139, 92, 246, 0.8);
+            display: none;
+        }
+
+        .game-over.show {
+            display: block;
+            animation: popup 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        @keyframes popup {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .game-over h1 {
+            color: #fbbf24;
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.8);
+        }
+
+        .game-over p {
+            color: #a78bfa;
+            font-size: 1.3rem;
+            margin: 10px 0;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            #gameBoard {
+                grid-template-columns: repeat(10, 25px);
+                grid-template-rows: repeat(20, 25px);
+            }
+            
+            .cell {
+                width: 25px;
+                height: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 우주 배경 -->
+    <div class="stars" id="stars"></div>
+    
+    <!-- UFO 배경 -->
+    <svg class="ufo-bg" style="top: 10%; left: 10%;" viewBox="0 0 100 100">
+        <ellipse cx="50" cy="60" rx="40" ry="10" fill="#8b5cf6" opacity="0.3"/>
+        <ellipse cx="50" cy="50" rx="35" ry="15" fill="#a78bfa"/>
+        <circle cx="50" cy="40" r="20" fill="#c4b5fd"/>
+        <circle cx="40" cy="40" r="3" fill="#fbbf24"/>
+        <circle cx="50" cy="38" r="3" fill="#fbbf24"/>
+        <circle cx="60" cy="40" r="3" fill="#fbbf24"/>
+    </svg>
+    
+    <svg class="ufo-bg" style="top: 70%; right: 15%;" viewBox="0 0 100 100">
+        <ellipse cx="50" cy="60" rx="40" ry="10" fill="#8b5cf6" opacity="0.3"/>
+        <ellipse cx="50" cy="50" rx="35" ry="15" fill="#a78bfa"/>
+        <circle cx="50" cy="40" r="20" fill="#c4b5fd"/>
+        <circle cx="40" cy="40" r="3" fill="#fbbf24"/>
+        <circle cx="50" cy="38" r="3" fill="#fbbf24"/>
+        <circle cx="60" cy="40" r="3" fill="#fbbf24"/>
+    </svg>
+
+    <div class="container">
+        <!-- 게임 보드 -->
+        <div class="game-wrapper">
+            <div id="gameBoard"></div>
+        </div>
+
+        <!-- 사이드바 -->
+        <div class="sidebar">
+            <!-- 점수 -->
+            <div class="info-panel">
+                <h2>🛸 SCORE</h2>
+                <div class="score-display" id="score">0</div>
+                <div class="survival-time" id="survivalTime">생존 시간: 00:00</div>
+                <button class="btn" id="startBtn" onclick="startGame()">START</button>
+                <button class="btn" style="margin-top: 10px;" onclick="togglePause()">PAUSE</button>
+            </div>
+
+            <!-- 다음 블록 -->
+            <div class="info-panel">
+                <h2>NEXT</h2>
+                <div class="next-piece" id="nextPiece"></div>
+            </div>
+
+            <!-- 조작법 -->
+            <div class="info-panel">
+                <h2>CONTROLS</h2>
+                <div class="controls">
+                    <div>⬅️ ➡️ : 좌우 이동</div>
+                    <div>⬆️ : 회전</div>
+                    <div>⬇️ : 빠르게 낙하</div>
+                    <div>🛸 : UFO 블록 = 십자 삭제!</div>
+                </div>
+            </div>
+
+            <!-- 리더보드 -->
+            <div class="info-panel">
+                <h2>🏆 TOP 10</h2>
+                <div class="leaderboard" id="leaderboard"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 게임 오버 -->
+    <div class="game-over" id="gameOver">
+        <h1>👾 GAME OVER</h1>
+        <p>최종 점수: <span id="finalScore">0</span></p>
+        <p>생존 시간: <span id="finalTime">00:00</span></p>
+        <button class="btn" style="margin-top: 20px;" onclick="restartGame()">다시 도전</button>
+    </div>
+
+    <script>
+        // 게임 설정
+        const ROWS = 20;
+        const COLS = 10;
+        const DROP_SPEED = 500; // 극상 난이도 (빠름)
+        const UFO_CHANCE = 0.03; // 3% 확률로 UFO 블록
+
+        // 테트리스 블록 모양
+        const SHAPES = [
+            [[1,1,1,1]], // I
+            [[1,1],[1,1]], // O
+            [[1,1,1],[0,1,0]], // T
+            [[1,1,1],[1,0,0]], // L
+            [[1,1,1],[0,0,1]], // J
+            [[1,1,0],[0,1,1]], // S
+            [[0,1,1],[1,1,0]]  // Z
+        ];
+
+        // 게임 상태
+        let board = [];
+        let currentPiece = null;
+        let nextPiece = null;
+        let score = 0;
+        let gameInterval = null;
+        let isPaused = false;
+        let startTime = null;
+        let survivalInterval = null;
+
+        // 보드 초기화
+        function initBoard() {
+            const boardElement = document.getElementById('gameBoard');
+            boardElement.innerHTML = '';
+            board = [];
+            
+            for (let row = 0; row < ROWS; row++) {
+                board[row] = [];
+                for (let col = 0; col < COLS; col++) {
+                    board[row][col] = { filled: false, isUFO: false };
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${row}-${col}`;
+                    boardElement.appendChild(cell);
+                }
+            }
+        }
+
+        // 별 생성
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                const size = Math.random() * 3;
+                star.style.width = size + 'px';
+                star.style.height = size + 'px';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // 랜덤 블록 생성
+        function createPiece() {
+            const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+            const isUFO = Math.random() < UFO_CHANCE;
+            
+            return {
+                shape: shape.map(row => [...row]),
+                row: 0,
+                col: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2),
+                isUFO: isUFO
+            };
+        }
+
+        // 다음 블록 표시
+        function showNextPiece() {
+            const nextElement = document.getElementById('nextPiece');
+            nextElement.innerHTML = '';
+            
+            for (let i = 0; i < 16; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'next-cell';
+                nextElement.appendChild(cell);
+            }
+            
+            if (nextPiece) {
+                nextPiece.shape.forEach((row, r) => {
+                    row.forEach((val, c) => {
+                        if (val) {
+                            const index = r * 4 + c;
+                            const cell = nextElement.children[index];
+                            cell.classList.add('filled');
+                            if (nextPiece.isUFO) {
+                                cell.classList.add('ufo');
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+        // 블록 그리기
+        function drawPiece(piece, erase = false) {
+            piece.shape.forEach((row, r) => {
+                row.forEach((val, c) => {
+                    if (val) {
+                        const row_idx = piece.row + r;
+                        const col_idx = piece.col + c;
+                        if (row_idx >= 0 && row_idx < ROWS && col_idx >= 0 && col_idx < COLS) {
+                            const cell = document.getElementById(`cell-${row_idx}-${col_idx}`);
+                            if (erase) {
+                                cell.classList.remove('filled', 'ufo');
+                            } else {
+                                cell.classList.add('filled');
+                                if (piece.isUFO) {
+                                    cell.classList.add('ufo');
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        // 충돌 감지
+        function checkCollision(piece, rowOffset = 0, colOffset = 0) {
+            return piece.shape.some((row, r) => {
+                return row.some((val, c) => {
+                    if (val) {
+                        const newRow = piece.row + r + rowOffset;
+                        const newCol = piece.col + c + colOffset;
+                        
+                        return newRow >= ROWS || 
+                               newCol < 0 || 
+                               newCol >= COLS || 
+                               (newRow >= 0 && board[newRow][newCol].filled);
+                    }
+                    return false;
+                });
+            });
+        }
+
+        // 블록 고정
+        function lockPiece() {
+            currentPiece.shape.forEach((row, r) => {
+                row.forEach((val, c) => {
+                    if (val) {
+                        const row_idx = currentPiece.row + r;
+                        const col_idx = currentPiece.col + c;
+                        if (row_idx >= 0 && row_idx < ROWS && col_idx >= 0 && col_idx < COLS) {
+                            board[row_idx][col_idx] = {
+                                filled: true,
+                                isUFO: currentPiece.isUFO
+                            };
+                        }
+                    }
+                });
+            });
+        }
+
+        // UFO 십자 제거 (가로 + 세로)
+        function clearUFOCross(row, col) {
+            let cellsToRemove = new Set();
+            
+            // 가로줄 전체
+            for (let c = 0; c < COLS; c++) {
+                cellsToRemove.add(`${row}-${c}`);
+            }
+            
+            // 세로줄 전체
+            for (let r = 0; r < ROWS; r++) {
+                cellsToRemove.add(`${r}-${col}`);
+            }
+            
+            // 애니메이션과 함께 제거
+            cellsToRemove.forEach(coord => {
+                const [r, c] = coord.split('-').map(Number);
+                const cell = document.getElementById(`cell-${r}-${c}`);
+                cell.style.transition = 'all 0.3s';
+                cell.style.transform = 'scale(1.3)';
+                cell.style.opacity = '0';
+            });
+            
+            setTimeout(() => {
+                cellsToRemove.forEach(coord => {
+                    const [r, c] = coord.split('-').map(Number);
+                    board[r][c] = { filled: false, isUFO: false };
+                    const cell = document.getElementById(`cell-${r}-${c}`);
+                    cell.classList.remove('filled', 'ufo');
+                    cell.style.transform = '';
+                    cell.style.opacity = '';
+                });
+                
+                // 중력 적용
+                applyGravity();
+                updateBoard();
+            }, 300);
+            
+            return cellsToRemove.size;
+        }
+
+        // 중력 적용 (빈 공간으로 블록 떨어뜨리기)
+        function applyGravity() {
+            for (let col = 0; col < COLS; col++) {
+                let writeRow = ROWS - 1;
+                for (let row = ROWS - 1; row >= 0; row--) {
+                    if (board[row][col].filled) {
+                        if (row !== writeRow) {
+                            board[writeRow][col] = board[row][col];
+                            board[row][col] = { filled: false, isUFO: false };
+                        }
+                        writeRow--;
+                    }
+                }
+            }
+        }
+
+        // 라인 클리어
+        function clearLines() {
+            let linesCleared = 0;
+            let ufoCellsFound = [];
+            
+            // UFO 블록 찾기
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (board[row][col].filled && board[row][col].isUFO) {
+                        ufoCellsFound.push({ row, col });
+                    }
+                }
+            }
+            
+            // UFO 십자 제거
+            if (ufoCellsFound.length > 0) {
+                ufoCellsFound.forEach(({ row, col }) => {
+                    const cleared = clearUFOCross(row, col);
+                    score += cleared * 10;
+                });
+                return; // UFO 제거는 별도 처리
+            }
+            
+            // 일반 라인 클리어
+            for (let row = ROWS - 1; row >= 0; row--) {
+                if (board[row].every(cell => cell.filled)) {
+                    board.splice(row, 1);
+                    board.unshift(Array(COLS).fill(null).map(() => ({ filled: false, isUFO: false })));
+                    linesCleared++;
+                    row++; // 다시 확인
+                }
+            }
+            
+            if (linesCleared > 0) {
+                score += linesCleared * 100;
+                updateBoard();
+            }
+        }
+
+        // 보드 업데이트
+        function updateBoard() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    const cell = document.getElementById(`cell-${row}-${col}`);
+                    if (board[row][col].filled) {
+                        cell.classList.add('filled');
+                        if (board[row][col].isUFO) {
+                            cell.classList.add('ufo');
+                        } else {
+                            cell.classList.remove('ufo');
+                        }
+                    } else {
+                        cell.classList.remove('filled', 'ufo');
+                    }
+                }
+            }
+            document.getElementById('score').textContent = score;
+        }
+
+        // 블록 회전
+        function rotatePiece() {
+            const rotated = currentPiece.shape[0].map((_, i) =>
+                currentPiece.shape.map(row => row[i]).reverse()
+            );
+            
+            const oldShape = currentPiece.shape;
+            currentPiece.shape = rotated;
+            
+            if (checkCollision(currentPiece)) {
+                currentPiece.shape = oldShape;
+            }
+        }
+
+        // 블록 이동
+        function movePiece(direction) {
+            if (isPaused) return;
+            
+            drawPiece(currentPiece, true);
+            
+            if (direction === 'left') {
+                if (!checkCollision(currentPiece, 0, -1)) {
+                    currentPiece.col--;
+                }
+            } else if (direction === 'right') {
+                if (!checkCollision(currentPiece, 0, 1)) {
+                    currentPiece.col++;
+                }
+            } else if (direction === 'down') {
+                if (!checkCollision(currentPiece, 1, 0)) {
+                    currentPiece.row++;
+                } else {
+                    drawPiece(currentPiece);
+                    lockPiece();
+                    clearLines();
+                    
+                    currentPiece = nextPiece;
+                    nextPiece = createPiece();
+                    showNextPiece();
+                    
+                    if (checkCollision(currentPiece)) {
+                        gameOver();
+                        return;
+                    }
+                }
+            } else if (direction === 'rotate') {
+                rotatePiece();
+            }
+            
+            drawPiece(currentPiece);
+        }
+
+        // 자동 낙하
+        function dropPiece() {
+            if (!isPaused) {
+                movePiece('down');
+            }
+        }
+
+        // 생존 시간 업데이트
+        function updateSurvivalTime() {
+            if (!startTime || isPaused) return;
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('survivalTime').textContent = `생존 시간: ${minutes}:${seconds}`;
+        }
+
+        // 키보드 컨트롤
+        document.addEventListener('keydown', (e) => {
+            if (!currentPiece) return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    movePiece('left');
+                    break;
+                case 'ArrowRight':
+                    movePiece('right');
+                    break;
+                case 'ArrowDown':
+                    movePiece('down');
+                    break;
+                case 'ArrowUp':
+                    movePiece('rotate');
+                    break;
+            }
+        });
+
+        // 게임 시작
+        function startGame() {
+            initBoard();
+            score = 0;
+            startTime = Date.now();
+            updateBoard();
+            
+            currentPiece = createPiece();
+            nextPiece = createPiece();
+            showNextPiece();
+            drawPiece(currentPiece);
+            
+            if (gameInterval) clearInterval(gameInterval);
+            if (survivalInterval) clearInterval(survivalInterval);
+            
+            gameInterval = setInterval(dropPiece, DROP_SPEED);
+            survivalInterval = setInterval(updateSurvivalTime, 1000);
+            
+            document.getElementById('startBtn').textContent = 'RESTART';
+            document.getElementById('gameOver').classList.remove('show');
+        }
+
+        // 일시정지
+        function togglePause() {
+            isPaused = !isPaused;
+        }
+
+        // 게임 오버
+        function gameOver() {
+            clearInterval(gameInterval);
+            clearInterval(survivalInterval);
+            
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalTime').textContent = `${minutes}:${seconds}`;
+            document.getElementById('gameOver').classList.add('show');
+            
+            saveScore(elapsed);
+            loadLeaderboard();
+        }
+
+        // 재시작
+        function restartGame() {
+            startGame();
+        }
+
+        // 점수 저장 (생존 시간 기준)
+        function saveScore(survivalTime) {
+            let scores = JSON.parse(localStorage.getItem('ufoTetrisScores') || '[]');
+            scores.push({ time: survivalTime, score: score, date: new Date().toISOString() });
+            scores.sort((a, b) => b.time - a.time);
+            scores = scores.slice(0, 10);
+            localStorage.setItem('ufoTetrisScores', JSON.stringify(scores));
+        }
+
+        // 리더보드 로드
+        function loadLeaderboard() {
+            const scores = JSON.parse(localStorage.getItem('ufoTetrisScores') || '[]');
+            const leaderboard = document.getElementById('leaderboard');
+            leaderboard.innerHTML = '';
+            
+            if (scores.length === 0) {
+                leaderboard.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">아직 기록이 없습니다</div>';
+                return;
+            }
+            
+            scores.forEach((entry, index) => {
+                const minutes = Math.floor(entry.time / 60).toString().padStart(2, '0');
+                const seconds = (entry.time % 60).toString().padStart(2, '0');
+                
+                const item = document.createElement('div');
+                item.className = 'leaderboard-item';
+                item.innerHTML = `
+                    <span class="leaderboard-rank">#${index + 1}</span>
+                    <span class="leaderboard-time">${minutes}:${seconds}</span>
+                    <span>${entry.score}점</span>
+                `;
+                leaderboard.appendChild(item);
+            });
+        }
+
+        // 초기화
+        createStars();
+        initBoard();
+        loadLeaderboard();
+    </script>
+</body>
+</html>
