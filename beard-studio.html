@@ -162,6 +162,8 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 15px;
+            max-height: 600px;
+            overflow-y: auto;
         }
 
         .beard-style {
@@ -366,7 +368,7 @@
                         </div>
                         <div class="beard-style" data-style="goatee" onclick="selectBeard('goatee')">
                             <div class="beard-icon">🧔‍♂️</div>
-                            <div class="beard-name">염소 수염</div>
+                            <div class="beard-name">염소수염</div>
                         </div>
                         <div class="beard-style" data-style="mustache" onclick="selectBeard('mustache')">
                             <div class="beard-icon">👨</div>
@@ -378,11 +380,27 @@
                         </div>
                         <div class="beard-style" data-style="stubble" onclick="selectBeard('stubble')">
                             <div class="beard-icon">😎</div>
-                            <div class="beard-name">무정발 수염</div>
+                            <div class="beard-name">무정발</div>
                         </div>
                         <div class="beard-style" data-style="chinstrap" onclick="selectBeard('chinstrap')">
                             <div class="beard-icon">💼</div>
                             <div class="beard-name">턱 스트랩</div>
+                        </div>
+                        <div class="beard-style" data-style="balbo" onclick="selectBeard('balbo')">
+                            <div class="beard-icon">🎯</div>
+                            <div class="beard-name">발보</div>
+                        </div>
+                        <div class="beard-style" data-style="handlebar" onclick="selectBeard('handlebar')">
+                            <div class="beard-icon">🥸</div>
+                            <div class="beard-name">핸들바</div>
+                        </div>
+                        <div class="beard-style" data-style="anchor" onclick="selectBeard('anchor')">
+                            <div class="beard-icon">⚓</div>
+                            <div class="beard-name">앵커</div>
+                        </div>
+                        <div class="beard-style" data-style="garibaldi" onclick="selectBeard('garibaldi')">
+                            <div class="beard-icon">🦁</div>
+                            <div class="beard-name">가리발디</div>
                         </div>
                     </div>
                 </div>
@@ -505,13 +523,14 @@
             }
         }
 
-        // 얼굴 감지 및 수염 그리기
+        // 얼굴 감지 및 수염 그리기 (개선된 추적)
         async function detectFace() {
             if (!isRunning) return;
             
             try {
                 const faces = await detector.estimateFaces(video, {
-                    flipHorizontal: false
+                    flipHorizontal: false,
+                    staticImageMode: false  // 비디오 모드로 추적 개선
                 });
                 
                 // 비디오 프레임은 그리지 않음 (비디오 태그가 보임)
@@ -521,10 +540,22 @@
                     const face = faces[0];
                     // keypoints 배열 확인
                     if (face.keypoints && face.keypoints.length > 0) {
-                        drawBeard(face.keypoints);
+                        // 얼굴 크기에 따라 수염 스케일 조정
+                        const faceWidth = Math.abs(
+                            getPoint(face.keypoints, 454)?.x - getPoint(face.keypoints, 234)?.x
+                        );
+                        const scale = faceWidth ? faceWidth / 200 : 1; // 기준 200px
+                        
+                        drawBeard(face.keypoints, scale);
                     } else {
                         console.log('keypoints 없음');
                     }
+                } else {
+                    // 얼굴이 감지되지 않으면 안내 메시지
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.font = '24px "Noto Sans KR"';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('얼굴을 화면 중앙에 배치해주세요', canvas.width / 2, canvas.height / 2);
                 }
             } catch (err) {
                 console.error('얼굴 감지 에러:', err);
@@ -534,7 +565,7 @@
         }
 
         // 수염 그리기 (텍스처 기반으로 완전 재작성)
-        function drawBeard(keypoints) {
+        function drawBeard(keypoints, scale = 1) {
             if (!keypoints || keypoints.length < 468) {
                 console.log('유효하지 않은 keypoints:', keypoints?.length);
                 return;
@@ -551,22 +582,34 @@
             try {
                 switch(currentBeard) {
                     case 'full':
-                        drawFullBeardRealistic(keypoints, r, g, b);
+                        drawFullBeardRealistic(keypoints, r, g, b, scale);
                         break;
                     case 'goatee':
-                        drawGoateeRealistic(keypoints, r, g, b);
+                        drawGoateeRealistic(keypoints, r, g, b, scale);
                         break;
                     case 'mustache':
-                        drawMustacheRealistic(keypoints, r, g, b);
+                        drawMustacheRealistic(keypoints, r, g, b, scale);
                         break;
                     case 'van-dyke':
-                        drawVanDykeRealistic(keypoints, r, g, b);
+                        drawVanDykeRealistic(keypoints, r, g, b, scale);
                         break;
                     case 'stubble':
-                        drawStubbleRealistic(keypoints, r, g, b);
+                        drawStubbleRealistic(keypoints, r, g, b, scale);
                         break;
                     case 'chinstrap':
-                        drawChinstrapRealistic(keypoints, r, g, b);
+                        drawChinstrapRealistic(keypoints, r, g, b, scale);
+                        break;
+                    case 'balbo':
+                        drawBalboRealistic(keypoints, r, g, b, scale);
+                        break;
+                    case 'handlebar':
+                        drawHandlebarRealistic(keypoints, r, g, b, scale);
+                        break;
+                    case 'anchor':
+                        drawAnchorRealistic(keypoints, r, g, b, scale);
+                        break;
+                    case 'garibaldi':
+                        drawGaribaldiRealistic(keypoints, r, g, b, scale);
                         break;
                 }
             } catch (err) {
@@ -576,8 +619,8 @@
             ctx.restore();
         }
 
-        // 수염 텍스처 그리기 (실제 털 느낌)
-        function drawBeardTexture(kp, indices, r, g, b, density = 0.3) {
+        // 수염 텍스처 그리기 (실제 털 느낌) - 스케일 반영
+        function drawBeardTexture(kp, indices, r, g, b, density = 0.3, scale = 1) {
             if (!kp || indices.length === 0) return;
             
             // 영역 그리기 (기본)
@@ -608,18 +651,18 @@
                 
                 // 각 포인트 사이에 여러 개의 수염 털 그리기
                 const distance = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
-                const numHairs = Math.floor(distance * density * beardThickness);
+                const numHairs = Math.floor(distance * density * beardThickness * scale);
                 
                 for (let j = 0; j < numHairs; j++) {
                     const t = j / numHairs;
-                    const x = p1.x + (p2.x - p1.x) * t + (Math.random() - 0.5) * 5;
-                    const y = p1.y + (p2.y - p1.y) * t + (Math.random() - 0.5) * 5;
+                    const x = p1.x + (p2.x - p1.x) * t + (Math.random() - 0.5) * 5 * scale;
+                    const y = p1.y + (p2.y - p1.y) * t + (Math.random() - 0.5) * 5 * scale;
                     
                     // 수염 한 올
                     const angle = Math.atan2(p2.y - p1.y, p2.x - p1.x) + (Math.random() - 0.5) * 0.5;
-                    const length = 3 + Math.random() * 5 * beardThickness;
+                    const length = (3 + Math.random() * 5) * beardThickness * scale;
                     
-                    ctx.lineWidth = 0.5 + Math.random() * 1;
+                    ctx.lineWidth = (0.5 + Math.random() * 1) * scale;
                     ctx.globalAlpha = beardOpacity * (0.5 + Math.random() * 0.5);
                     
                     ctx.beginPath();
@@ -845,3 +888,136 @@
     </script>
 </body>
 </html>
+
+
+        // 발보 (Balbo) - 콧수염 없는 염소수염 + 턱 패치
+        function drawBalboRealistic(kp, r, g, b, scale = 1) {
+            // 콧수염
+            drawMustacheRealistic(kp, r, g, b, scale);
+            
+            // 턱 중앙만 (콧수염과 연결 안됨)
+            const chinPatch = [
+                150, 149, 176, 148, 152, 377, 400, 378, 379, 150
+            ];
+            
+            // Soul patch (입 아래)
+            const soulArea = [
+                164, 167, 165, 92, 164
+            ];
+            
+            drawBeardTexture(kp, chinPatch, r, g, b, 0.6, scale);
+            drawBeardTexture(kp, soulArea, r, g, b, 0.7, scale);
+        }
+
+        // 핸들바 (Handlebar) - 위로 올라간 콧수염
+        function drawHandlebarRealistic(kp, r, g, b, scale = 1) {
+            const leftNose = getPoint(kp, 98);
+            const rightNose = getPoint(kp, 327);
+            const leftMouth = getPoint(kp, 61);
+            const rightMouth = getPoint(kp, 291);
+            
+            if (!leftNose || !rightNose || !leftMouth || !rightMouth) return;
+            
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${beardOpacity})`;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 8 * beardThickness * scale;
+            
+            // 왼쪽 핸들바 (위로 컬)
+            ctx.beginPath();
+            ctx.moveTo(leftMouth.x, leftMouth.y);
+            ctx.quadraticCurveTo(
+                leftNose.x - 20 * scale,
+                leftNose.y,
+                leftNose.x - 40 * scale,
+                leftNose.y - 30 * scale
+            );
+            ctx.stroke();
+            
+            // 오른쪽 핸들바
+            ctx.beginPath();
+            ctx.moveTo(rightMouth.x, rightMouth.y);
+            ctx.quadraticCurveTo(
+                rightNose.x + 20 * scale,
+                rightNose.y,
+                rightNose.x + 40 * scale,
+                rightNose.y - 30 * scale
+            );
+            ctx.stroke();
+            
+            // 중앙 콧수염
+            ctx.lineWidth = 10 * beardThickness * scale;
+            ctx.beginPath();
+            ctx.moveTo(leftMouth.x, leftMouth.y);
+            ctx.lineTo(rightMouth.x, rightMouth.y);
+            ctx.stroke();
+        }
+
+        // 앵커 (Anchor) - 앵커 모양
+        function drawAnchorRealistic(kp, r, g, b, scale = 1) {
+            // 콧수염
+            drawMustacheRealistic(kp, r, g, b, scale);
+            
+            // Soul patch
+            const soulPatch = [
+                164, 167, 165, 92, 164
+            ];
+            
+            // 턱 끝으로 내려가는 라인
+            const chinLine = [
+                92, 186, 61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409
+            ];
+            
+            drawBeardTexture(kp, soulPatch, r, g, b, 0.7, scale);
+            drawBeardTexture(kp, chinLine, r, g, b, 0.5, scale);
+            
+            // 턱 끝 포인트
+            const chinTip = getPoint(kp, 152);
+            if (chinTip) {
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${beardOpacity})`;
+                ctx.beginPath();
+                ctx.arc(chinTip.x, chinTip.y, 8 * scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // 가리발디 (Garibaldi) - 둥글고 풍성한 수염
+        function drawGaribaldiRealistic(kp, r, g, b, scale = 1) {
+            // 풀 비어드 + 확장된 턱
+            const fullJaw = [
+                127, 162, 234, 93, 132, 58, 172, 136, 150, 149, 176, 148, 152,
+                377, 400, 378, 379, 365, 397, 288, 361, 323, 454, 356
+            ];
+            
+            const underArea = [
+                164, 167, 165, 92, 186, 61, 146, 91, 181, 84, 17, 314, 405, 321,
+                375, 291, 409, 270, 269, 267, 393, 391, 164
+            ];
+            
+            // 더 두껍고 풍성하게
+            const oldThickness = beardThickness;
+            beardThickness *= 1.5;
+            
+            drawBeardTexture(kp, fullJaw, r, g, b, 0.6, scale);
+            drawBeardTexture(kp, underArea, r, g, b, 0.7, scale);
+            drawMustacheRealistic(kp, r, g, b, scale);
+            
+            // 턱 아래 확장 (둥근 모양)
+            const chinExtension = getPoint(kp, 152);
+            if (chinExtension) {
+                ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${beardOpacity * 0.8})`;
+                ctx.beginPath();
+                ctx.ellipse(
+                    chinExtension.x,
+                    chinExtension.y + 30 * scale,
+                    40 * scale,
+                    30 * scale,
+                    0,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            beardThickness = oldThickness;
+        }
