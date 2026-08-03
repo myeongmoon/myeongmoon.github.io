@@ -423,7 +423,10 @@
     </div>
 
     <!-- TensorFlow.js와 FaceMesh -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
 
     <script>
@@ -432,7 +435,7 @@
         let detector;
         let isRunning = false;
         let currentBeard = 'full';
-        let beardColor = 0.5;  // 0=흰색, 1=검정색
+        let beardColor = 0.5;  // 0=밝음, 1=어두움
         let beardOpacity = 0.8;
         let beardThickness = 1.0;
 
@@ -441,15 +444,19 @@
             video = document.getElementById('video');
             canvas = document.getElementById('canvas');
             ctx = canvas.getContext('2d');
+            
+            console.log('초기화 완료');
         }
 
         // 카메라 시작
         async function startCamera() {
             try {
+                showStatus('카메라 접근중...', 'info');
+                
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { 
-                        width: 1280, 
-                        height: 720,
+                        width: { ideal: 1280 }, 
+                        height: { ideal: 720 },
                         facingMode: 'user'
                     } 
                 });
@@ -457,29 +464,43 @@
                 video.srcObject = stream;
                 
                 video.onloadedmetadata = async () => {
+                    video.play();
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                     
-                    showStatus('AI 모델 로딩중...', 'info');
+                    console.log('비디오 로드됨:', canvas.width, 'x', canvas.height);
+                    
+                    showStatus('AI 모델 로딩중... (10초 정도 소요)', 'info');
                     document.getElementById('loading').style.display = 'block';
                     
-                    // FaceMesh 모델 로드
-                    const model = await faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
-                    detector = await faceLandmarksDetection.createDetector(model, {
-                        runtime: 'tfjs',
-                        refineLandmarks: true
-                    });
-                    
-                    document.getElementById('loading').style.display = 'none';
-                    showStatus('✅ 카메라 실행중! 수염 스타일을 선택하세요', 'success');
-                    
-                    document.getElementById('startBtn').disabled = true;
-                    document.getElementById('captureBtn').disabled = false;
-                    
-                    isRunning = true;
-                    detectFace();
+                    try {
+                        // FaceMesh 모델 로드 (MediaPipe 버전)
+                        const model = faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
+                        detector = await faceLandmarksDetection.createDetector(model, {
+                            runtime: 'mediapipe',
+                            solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh',
+                            refineLandmarks: true,
+                            maxFaces: 1
+                        });
+                        
+                        console.log('모델 로드 완료');
+                        
+                        document.getElementById('loading').style.display = 'none';
+                        showStatus('✅ 얼굴을 인식중... 수염이 나타날 때까지 잠시만 기다려주세요!', 'success');
+                        
+                        document.getElementById('startBtn').disabled = true;
+                        document.getElementById('captureBtn').disabled = false;
+                        
+                        isRunning = true;
+                        detectFace();
+                    } catch (modelErr) {
+                        console.error('모델 로드 실패:', modelErr);
+                        showStatus('❌ AI 모델 로드 실패. 페이지를 새로고침해주세요.', 'error');
+                        document.getElementById('loading').style.display = 'none';
+                    }
                 };
             } catch (err) {
+                console.error('카메라 에러:', err);
                 showStatus('❌ 카메라 접근 실패: ' + err.message, 'error');
             }
         }
@@ -488,14 +509,25 @@
         async function detectFace() {
             if (!isRunning) return;
             
-            const faces = await detector.estimateFaces(video);
-            
-            // 비디오 프레임 그리기
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            if (faces.length > 0) {
-                const face = faces[0];
-                drawBeard(face.keypoints);
+            try {
+                const faces = await detector.estimateFaces(video, {
+                    flipHorizontal: false
+                });
+                
+                // 비디오 프레임은 그리지 않음 (비디오 태그가 보임)
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                if (faces.length > 0) {
+                    const face = faces[0];
+                    // keypoints 배열 확인
+                    if (face.keypoints && face.keypoints.length > 0) {
+                        drawBeard(face.keypoints);
+                    } else {
+                        console.log('keypoints 없음');
+                    }
+                }
+            } catch (err) {
+                console.error('얼굴 감지 에러:', err);
             }
             
             requestAnimationFrame(detectFace);
@@ -503,39 +535,48 @@
 
         // 수염 그리기
         function drawBeard(keypoints) {
-            // 얼굴 주요 포인트 인덱스 (MediaPipe FaceMesh)
-            const chin = [152];  // 턱 끝
-            const leftChin = [234, 127, 162];  // 왼쪽 턱선
-            const rightChin = [454, 356, 389];  // 오른쪽 턱선
-            const mouth = [61, 91, 181, 84, 17, 314, 405, 321, 375];  // 입 주변
-            const nose = [19, 1];  // 코 아래
+            if (!keypoints || keypoints.length < 468) {
+                console.log('유효하지 않은 keypoints:', keypoints?.length);
+                return;
+            }
             
             ctx.globalAlpha = beardOpacity;
             
-            // 수염 색상 (검정~갈색~회색)
-            const r = Math.floor(50 + beardColor * 100);
-            const g = Math.floor(30 + beardColor * 80);
-            const b = Math.floor(20 + beardColor * 60);
+            // 수염 색상 (밝음 → 어두움)
+            const brightness = 1 - beardColor; // 반대로
+            const r = Math.floor(30 + brightness * 120);
+            const g = Math.floor(20 + brightness * 80);
+            const b = Math.floor(15 + brightness * 60);
             
-            switch(currentBeard) {
-                case 'full':
-                    drawFullBeard(keypoints, r, g, b);
-                    break;
-                case 'goatee':
-                    drawGoatee(keypoints, r, g, b);
-                    break;
-                case 'mustache':
-                    drawMustache(keypoints, r, g, b);
-                    break;
-                case 'van-dyke':
-                    drawVanDyke(keypoints, r, g, b);
-                    break;
-                case 'stubble':
-                    drawStubble(keypoints, r, g, b);
-                    break;
-                case 'chinstrap':
-                    drawChinstrap(keypoints, r, g, b);
-                    break;
+            // 디버깅: 얼굴 포인트 표시
+            // ctx.fillStyle = 'red';
+            // keypoints.forEach(kp => {
+            //     ctx.fillRect(kp.x - 2, kp.y - 2, 4, 4);
+            // });
+            
+            try {
+                switch(currentBeard) {
+                    case 'full':
+                        drawFullBeard(keypoints, r, g, b);
+                        break;
+                    case 'goatee':
+                        drawGoatee(keypoints, r, g, b);
+                        break;
+                    case 'mustache':
+                        drawMustache(keypoints, r, g, b);
+                        break;
+                    case 'van-dyke':
+                        drawVanDyke(keypoints, r, g, b);
+                        break;
+                    case 'stubble':
+                        drawStubble(keypoints, r, g, b);
+                        break;
+                    case 'chinstrap':
+                        drawChinstrap(keypoints, r, g, b);
+                        break;
+                }
+            } catch (err) {
+                console.error('수염 그리기 에러:', err);
             }
             
             ctx.globalAlpha = 1.0;
@@ -577,39 +618,56 @@
 
         // 콧수염
         function drawMustache(kp, r, g, b) {
-            const nose = kp[1];
-            const leftMouth = kp[61];
-            const rightMouth = kp[291];
-            const leftNose = kp[129];
-            const rightNose = kp[358];
+            const nose = getPoint(kp, 1);
+            const leftMouth = getPoint(kp, 61);
+            const rightMouth = getPoint(kp, 291);
+            const leftNose = getPoint(kp, 129);
+            const rightNose = getPoint(kp, 358);
             
-            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            if (!nose || !leftMouth || !rightMouth || !leftNose || !rightNose) {
+                console.log('콧수염 포인트 누락');
+                return;
+            }
             
-            // 왼쪽 콧수염
-            ctx.beginPath();
-            ctx.ellipse(
-                (leftNose.x + leftMouth.x) / 2,
-                (leftNose.y + leftMouth.y) / 2,
-                Math.abs(leftNose.x - leftMouth.x) * 0.8 * beardThickness,
-                Math.abs(leftNose.y - leftMouth.y) * 1.2 * beardThickness,
-                -0.3,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${beardOpacity})`;
+            ctx.shadowBlur = 15 * beardThickness;
+            ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.5)`;
             
-            // 오른쪽 콧수염
-            ctx.beginPath();
-            ctx.ellipse(
-                (rightNose.x + rightMouth.x) / 2,
-                (rightNose.y + rightMouth.y) / 2,
-                Math.abs(rightNose.x - rightMouth.x) * 0.8 * beardThickness,
-                Math.abs(rightNose.y - rightMouth.y) * 1.2 * beardThickness,
-                0.3,
-                0,
-                Math.PI * 2
-            );
-            ctx.fill();
+            try {
+                // 왼쪽 콧수염
+                ctx.beginPath();
+                const leftWidth = Math.abs(leftNose.x - leftMouth.x) * 0.8 * beardThickness;
+                const leftHeight = Math.abs(leftNose.y - leftMouth.y) * 1.2 * beardThickness;
+                ctx.ellipse(
+                    (leftNose.x + leftMouth.x) / 2,
+                    (leftNose.y + leftMouth.y) / 2,
+                    leftWidth > 0 ? leftWidth : 10,
+                    leftHeight > 0 ? leftHeight : 10,
+                    -0.3,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+                
+                // 오른쪽 콧수염
+                ctx.beginPath();
+                const rightWidth = Math.abs(rightNose.x - rightMouth.x) * 0.8 * beardThickness;
+                const rightHeight = Math.abs(rightNose.y - rightMouth.y) * 1.2 * beardThickness;
+                ctx.ellipse(
+                    (rightNose.x + rightMouth.x) / 2,
+                    (rightNose.y + rightMouth.y) / 2,
+                    rightWidth > 0 ? rightWidth : 10,
+                    rightHeight > 0 ? rightHeight : 10,
+                    0.3,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            } catch (err) {
+                console.error('콧수염 그리기 에러:', err);
+            }
+            
+            ctx.shadowBlur = 0;
         }
 
         // 반 다이크 (콧수염 + 작은 턱수염)
@@ -641,45 +699,79 @@
             const leftJaw = [127, 234, 93, 132, 58, 172, 136, 150, 149, 176, 148, 152];
             const rightJaw = [356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152];
             
-            ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${beardOpacity})`;
             ctx.lineWidth = 15 * beardThickness;
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
+            ctx.shadowBlur = 10 * beardThickness;
+            ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.5)`;
             
             // 턱선만
             ctx.beginPath();
-            leftJaw.forEach((idx, i) => {
-                const point = kp[idx];
-                if (i === 0) ctx.moveTo(point.x, point.y);
-                else ctx.lineTo(point.x, point.y);
+            let started = false;
+            leftJaw.forEach((idx) => {
+                const point = getPoint(kp, idx);
+                if (!point) return;
+                if (!started) {
+                    ctx.moveTo(point.x, point.y);
+                    started = true;
+                } else {
+                    ctx.lineTo(point.x, point.y);
+                }
             });
             ctx.stroke();
             
             ctx.beginPath();
-            rightJaw.forEach((idx, i) => {
-                const point = kp[idx];
-                if (i === 0) ctx.moveTo(point.x, point.y);
-                else ctx.lineTo(point.x, point.y);
+            started = false;
+            rightJaw.forEach((idx) => {
+                const point = getPoint(kp, idx);
+                if (!point) return;
+                if (!started) {
+                    ctx.moveTo(point.x, point.y);
+                    started = true;
+                } else {
+                    ctx.lineTo(point.x, point.y);
+                }
             });
             ctx.stroke();
+            
+            ctx.shadowBlur = 0;
         }
 
         // 수염 패치 그리기 헬퍼
         function drawBeardPatch(kp, indices, r, g, b, blur = 20) {
-            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-            ctx.shadowBlur = blur;
-            ctx.shadowColor = `rgb(${r}, ${g}, ${b})`;
+            if (!kp || indices.length === 0) return;
+            
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${beardOpacity})`;
+            ctx.shadowBlur = blur * beardThickness;
+            ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.5)`;
             
             ctx.beginPath();
-            indices.forEach((idx, i) => {
+            let started = false;
+            indices.forEach((idx) => {
+                if (idx >= kp.length) return;
                 const point = kp[idx];
-                if (i === 0) ctx.moveTo(point.x, point.y);
-                else ctx.lineTo(point.x, point.y);
+                if (!point || point.x === undefined || point.y === undefined) return;
+                
+                if (!started) {
+                    ctx.moveTo(point.x, point.y);
+                    started = true;
+                } else {
+                    ctx.lineTo(point.x, point.y);
+                }
             });
             ctx.closePath();
             ctx.fill();
             
             ctx.shadowBlur = 0;
+        }
+
+        // 안전한 포인트 가져오기
+        function getPoint(kp, idx) {
+            if (idx >= kp.length) return null;
+            const p = kp[idx];
+            if (!p || p.x === undefined || p.y === undefined) return null;
+            return p;
         }
 
         // 수염 스타일 선택
