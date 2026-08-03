@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧔 Beard Studio - 나만의 수염 찾기</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;800&family=Noto+Sans+KR:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 헤더 */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+        }
+
+        .logo {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #f59e0b, #dc2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            text-shadow: 0 0 40px rgba(245, 158, 11, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        /* 메인 콘텐츠 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        /* 카메라 영역 */
+        .camera-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .camera-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        #video {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f59e0b, #dc2626);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+            text-transform: uppercase;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(245, 158, 11, 0.5);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 15px 40px rgba(59, 130, 246, 0.5);
+        }
+
+        /* 사이드바 */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #f59e0b;
+        }
+
+        /* 수염 스타일 선택 */
+        .beard-styles {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .beard-style {
+            position: relative;
+            aspect-ratio: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .beard-style:hover {
+            border-color: #f59e0b;
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+        }
+
+        .beard-style.active {
+            border-color: #dc2626;
+            background: rgba(220, 38, 38, 0.2);
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.5);
+        }
+
+        .beard-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .beard-name {
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-align: center;
+            color: #e2e8f0;
+        }
+
+        /* 조정 패널 */
+        .adjustment {
+            margin-bottom: 20px;
+        }
+
+        .adjustment label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #dc2626);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #dc2626);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            border: none;
+        }
+
+        .value-display {
+            display: inline-block;
+            float: right;
+            color: #f59e0b;
+            font-weight: 700;
+        }
+
+        /* 상태 표시 */
+        .status {
+            padding: 15px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+            font-size: 0.9rem;
+            color: #93c5fd;
+            margin-bottom: 20px;
+        }
+
+        .status.error {
+            background: rgba(220, 38, 38, 0.2);
+            border-left-color: #dc2626;
+            color: #fca5a5;
+        }
+
+        .status.success {
+            background: rgba(34, 197, 94, 0.2);
+            border-left-color: #22c55e;
+            color: #86efac;
+        }
+
+        /* 로딩 */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #f59e0b;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 반응형 */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                flex-direction: row;
+            }
+            
+            .beard-styles {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .logo {
+                font-size: 2rem;
+            }
+            
+            .beard-styles {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <div class="logo">🧔 BEARD STUDIO</div>
+            <div class="subtitle">실시간 얼굴 인식으로 나만의 수염 스타일 찾기</div>
+        </div>
+
+        <div class="main-content">
+            <!-- 카메라 영역 -->
+            <div class="camera-section">
+                <div id="status" class="status">카메라를 시작하려면 "카메라 시작" 버튼을 클릭하세요</div>
+                
+                <div class="camera-wrapper">
+                    <video id="video" playsinline autoplay></video>
+                    <canvas id="canvas"></canvas>
+                    <div id="loading" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <div>AI 모델 로딩중...</div>
+                    </div>
+                </div>
+
+                <div class="camera-controls">
+                    <button class="btn" id="startBtn" onclick="startCamera()">📹 카메라 시작</button>
+                    <button class="btn btn-secondary" id="captureBtn" onclick="capturePhoto()" disabled>📸 사진 촬영</button>
+                </div>
+            </div>
+
+            <!-- 사이드바 -->
+            <div class="sidebar">
+                <!-- 수염 스타일 선택 -->
+                <div class="panel">
+                    <h3>🎭 수염 스타일</h3>
+                    <div class="beard-styles">
+                        <div class="beard-style active" data-style="full" onclick="selectBeard('full')">
+                            <div class="beard-icon">🧔</div>
+                            <div class="beard-name">풀 비어드</div>
+                        </div>
+                        <div class="beard-style" data-style="goatee" onclick="selectBeard('goatee')">
+                            <div class="beard-icon">🧔‍♂️</div>
+                            <div class="beard-name">염소 수염</div>
+                        </div>
+                        <div class="beard-style" data-style="mustache" onclick="selectBeard('mustache')">
+                            <div class="beard-icon">👨</div>
+                            <div class="beard-name">콧수염</div>
+                        </div>
+                        <div class="beard-style" data-style="van-dyke" onclick="selectBeard('van-dyke')">
+                            <div class="beard-icon">🎩</div>
+                            <div class="beard-name">반 다이크</div>
+                        </div>
+                        <div class="beard-style" data-style="stubble" onclick="selectBeard('stubble')">
+                            <div class="beard-icon">😎</div>
+                            <div class="beard-name">무정발 수염</div>
+                        </div>
+                        <div class="beard-style" data-style="chinstrap" onclick="selectBeard('chinstrap')">
+                            <div class="beard-icon">💼</div>
+                            <div class="beard-name">턱 스트랩</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 조정 패널 -->
+                <div class="panel">
+                    <h3>⚙️ 세부 조정</h3>
+                    
+                    <div class="adjustment">
+                        <label>
+                            색상 (어두움 ← → 밝음)
+                            <span class="value-display" id="colorValue">50%</span>
+                        </label>
+                        <input type="range" class="slider" id="colorSlider" min="0" max="100" value="50" 
+                               oninput="updateColor(this.value)">
+                    </div>
+
+                    <div class="adjustment">
+                        <label>
+                            투명도
+                            <span class="value-display" id="opacityValue">80%</span>
+                        </label>
+                        <input type="range" class="slider" id="opacitySlider" min="0" max="100" value="80" 
+                               oninput="updateOpacity(this.value)">
+                    </div>
+
+                    <div class="adjustment">
+                        <label>
+                            두께
+                            <span class="value-display" id="thicknessValue">100%</span>
+                        </label>
+                        <input type="range" class="slider" id="thicknessSlider" min="50" max="150" value="100" 
+                               oninput="updateThickness(this.value)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TensorFlow.js와 FaceMesh -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection"></script>
+
+    <script>
+        // 전역 변수
+        let video, canvas, ctx;
+        let detector;
+        let isRunning = false;
+        let currentBeard = 'full';
+        let beardColor = 0.5;  // 0=흰색, 1=검정색
+        let beardOpacity = 0.8;
+        let beardThickness = 1.0;
+
+        // 초기화
+        async function init() {
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+        }
+
+        // 카메라 시작
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: 1280, 
+                        height: 720,
+                        facingMode: 'user'
+                    } 
+                });
+                
+                video.srcObject = stream;
+                
+                video.onloadedmetadata = async () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    
+                    showStatus('AI 모델 로딩중...', 'info');
+                    document.getElementById('loading').style.display = 'block';
+                    
+                    // FaceMesh 모델 로드
+                    const model = await faceLandmarksDetection.SupportedModels.MediaPipeFaceMesh;
+                    detector = await faceLandmarksDetection.createDetector(model, {
+                        runtime: 'tfjs',
+                        refineLandmarks: true
+                    });
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    showStatus('✅ 카메라 실행중! 수염 스타일을 선택하세요', 'success');
+                    
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('captureBtn').disabled = false;
+                    
+                    isRunning = true;
+                    detectFace();
+                };
+            } catch (err) {
+                showStatus('❌ 카메라 접근 실패: ' + err.message, 'error');
+            }
+        }
+
+        // 얼굴 감지 및 수염 그리기
+        async function detectFace() {
+            if (!isRunning) return;
+            
+            const faces = await detector.estimateFaces(video);
+            
+            // 비디오 프레임 그리기
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (faces.length > 0) {
+                const face = faces[0];
+                drawBeard(face.keypoints);
+            }
+            
+            requestAnimationFrame(detectFace);
+        }
+
+        // 수염 그리기
+        function drawBeard(keypoints) {
+            // 얼굴 주요 포인트 인덱스 (MediaPipe FaceMesh)
+            const chin = [152];  // 턱 끝
+            const leftChin = [234, 127, 162];  // 왼쪽 턱선
+            const rightChin = [454, 356, 389];  // 오른쪽 턱선
+            const mouth = [61, 91, 181, 84, 17, 314, 405, 321, 375];  // 입 주변
+            const nose = [19, 1];  // 코 아래
+            
+            ctx.globalAlpha = beardOpacity;
+            
+            // 수염 색상 (검정~갈색~회색)
+            const r = Math.floor(50 + beardColor * 100);
+            const g = Math.floor(30 + beardColor * 80);
+            const b = Math.floor(20 + beardColor * 60);
+            
+            switch(currentBeard) {
+                case 'full':
+                    drawFullBeard(keypoints, r, g, b);
+                    break;
+                case 'goatee':
+                    drawGoatee(keypoints, r, g, b);
+                    break;
+                case 'mustache':
+                    drawMustache(keypoints, r, g, b);
+                    break;
+                case 'van-dyke':
+                    drawVanDyke(keypoints, r, g, b);
+                    break;
+                case 'stubble':
+                    drawStubble(keypoints, r, g, b);
+                    break;
+                case 'chinstrap':
+                    drawChinstrap(keypoints, r, g, b);
+                    break;
+            }
+            
+            ctx.globalAlpha = 1.0;
+        }
+
+        // 풀 비어드
+        function drawFullBeard(kp, r, g, b) {
+            const leftJaw = [127, 234, 93, 132, 58, 172, 136, 150, 149, 176, 148, 152];
+            const rightJaw = [356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152];
+            const underLip = [17, 84, 181, 91, 146, 61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17];
+            
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            
+            // 턱선 수염
+            ctx.beginPath();
+            leftJaw.forEach((idx, i) => {
+                const point = kp[idx];
+                if (i === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            });
+            rightJaw.reverse().forEach(idx => {
+                const point = kp[idx];
+                ctx.lineTo(point.x, point.y);
+            });
+            ctx.closePath();
+            ctx.fill();
+            
+            // 입 아래 수염
+            drawBeardPatch(kp, underLip, r, g, b, 30 * beardThickness);
+        }
+
+        // 염소수염 (턱만)
+        function drawGoatee(kp, r, g, b) {
+            const goateePoints = [152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127,
+                                 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152];
+            
+            drawBeardPatch(kp, goateePoints, r, g, b, 25 * beardThickness);
+        }
+
+        // 콧수염
+        function drawMustache(kp, r, g, b) {
+            const nose = kp[1];
+            const leftMouth = kp[61];
+            const rightMouth = kp[291];
+            const leftNose = kp[129];
+            const rightNose = kp[358];
+            
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            
+            // 왼쪽 콧수염
+            ctx.beginPath();
+            ctx.ellipse(
+                (leftNose.x + leftMouth.x) / 2,
+                (leftNose.y + leftMouth.y) / 2,
+                Math.abs(leftNose.x - leftMouth.x) * 0.8 * beardThickness,
+                Math.abs(leftNose.y - leftMouth.y) * 1.2 * beardThickness,
+                -0.3,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+            
+            // 오른쪽 콧수염
+            ctx.beginPath();
+            ctx.ellipse(
+                (rightNose.x + rightMouth.x) / 2,
+                (rightNose.y + rightMouth.y) / 2,
+                Math.abs(rightNose.x - rightMouth.x) * 0.8 * beardThickness,
+                Math.abs(rightNose.y - rightMouth.y) * 1.2 * beardThickness,
+                0.3,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+        }
+
+        // 반 다이크 (콧수염 + 작은 턱수염)
+        function drawVanDyke(kp, r, g, b) {
+            // 콧수염
+            drawMustache(kp, r, g, b);
+            
+            // 작은 턱수염
+            const smallGoatee = [152, 176, 149, 150, 136, 172, 397, 365, 379, 378, 400, 377, 152];
+            drawBeardPatch(kp, smallGoatee, r, g, b, 20 * beardThickness);
+        }
+
+        // 무정발 (얇은 전체)
+        function drawStubble(kp, r, g, b) {
+            const oldThickness = beardThickness;
+            beardThickness = beardThickness * 0.5;
+            const oldOpacity = ctx.globalAlpha;
+            ctx.globalAlpha = beardOpacity * 0.6;
+            
+            drawFullBeard(kp, r, g, b);
+            drawMustache(kp, r, g, b);
+            
+            beardThickness = oldThickness;
+            ctx.globalAlpha = oldOpacity;
+        }
+
+        // 턱 스트랩
+        function drawChinstrap(kp, r, g, b) {
+            const leftJaw = [127, 234, 93, 132, 58, 172, 136, 150, 149, 176, 148, 152];
+            const rightJaw = [356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152];
+            
+            ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.lineWidth = 15 * beardThickness;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // 턱선만
+            ctx.beginPath();
+            leftJaw.forEach((idx, i) => {
+                const point = kp[idx];
+                if (i === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            });
+            ctx.stroke();
+            
+            ctx.beginPath();
+            rightJaw.forEach((idx, i) => {
+                const point = kp[idx];
+                if (i === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            });
+            ctx.stroke();
+        }
+
+        // 수염 패치 그리기 헬퍼
+        function drawBeardPatch(kp, indices, r, g, b, blur = 20) {
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.shadowBlur = blur;
+            ctx.shadowColor = `rgb(${r}, ${g}, ${b})`;
+            
+            ctx.beginPath();
+            indices.forEach((idx, i) => {
+                const point = kp[idx];
+                if (i === 0) ctx.moveTo(point.x, point.y);
+                else ctx.lineTo(point.x, point.y);
+            });
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+        }
+
+        // 수염 스타일 선택
+        function selectBeard(style) {
+            currentBeard = style;
+            
+            document.querySelectorAll('.beard-style').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelector(`[data-style="${style}"]`).classList.add('active');
+        }
+
+        // 색상 조정
+        function updateColor(value) {
+            beardColor = value / 100;
+            document.getElementById('colorValue').textContent = value + '%';
+        }
+
+        // 투명도 조정
+        function updateOpacity(value) {
+            beardOpacity = value / 100;
+            document.getElementById('opacityValue').textContent = value + '%';
+        }
+
+        // 두께 조정
+        function updateThickness(value) {
+            beardThickness = value / 100;
+            document.getElementById('thicknessValue').textContent = value + '%';
+        }
+
+        // 사진 촬영
+        function capturePhoto() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // 원본 비디오 (좌우 반전)
+            tempCtx.save();
+            tempCtx.scale(-1, 1);
+            tempCtx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+            tempCtx.restore();
+            
+            // 수염 레이어 (좌우 반전)
+            tempCtx.save();
+            tempCtx.scale(-1, 1);
+            tempCtx.drawImage(canvas, -canvas.width, 0);
+            tempCtx.restore();
+            
+            // 다운로드
+            tempCanvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `beard-${currentBeard}-${Date.now()}.png`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                showStatus('✅ 사진이 저장되었습니다!', 'success');
+                setTimeout(() => {
+                    showStatus('✅ 카메라 실행중! 수염 스타일을 선택하세요', 'success');
+                }, 2000);
+            });
+        }
+
+        // 상태 메시지
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        // 페이지 로드 시
+        window.onload = init;
+    </script>
+</body>
+</html>
