@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PREEDOM - Typography Showcase</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: #0a0a0a;
+            color: white;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 컨트롤 패널 */
+        .control-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(20, 20, 20, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .control-panel h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .effect-group {
+            margin-bottom: 20px;
+        }
+
+        .effect-group h3 {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .effect-btn {
+            width: 100%;
+            padding: 12px;
+            margin: 5px 0;
+            background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+            border: 2px solid #333;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .effect-btn:hover {
+            border-color: #ff006e;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(255, 0, 110, 0.3);
+        }
+
+        .effect-btn.active {
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            border-color: #ff006e;
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.5);
+        }
+
+        .toggle-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .toggle-btn {
+            padding: 8px;
+            background: #1e1e1e;
+            border: 1px solid #333;
+            color: #888;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: #8338ec;
+            color: white;
+            border-color: #8338ec;
+        }
+
+        .info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+            font-family: monospace;
+        }
+
+        .title-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 로딩 */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            color: #ff006e;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="loading" id="loading">LOADING...</div>
+
+    <div class="control-panel">
+        <h2>✨ PREEDOM EFFECTS</h2>
+        
+        <div class="effect-group">
+            <h3>Main Styles</h3>
+            <button class="effect-btn active" data-style="3d">🔮 3D Rotation</button>
+            <button class="effect-btn" data-style="particle">💫 Particle Explosion</button>
+            <button class="effect-btn" data-style="glitch">⚡ Glitch / Cyberpunk</button>
+            <button class="effect-btn" data-style="liquid">🌊 Liquid Wave</button>
+            <button class="effect-btn" data-style="kinetic">🎯 Kinetic Motion</button>
+        </div>
+
+        <div class="effect-group">
+            <h3>Mix Effects</h3>
+            <div class="toggle-group">
+                <button class="toggle-btn" data-mix="neon">Neon</button>
+                <button class="toggle-btn" data-mix="hologram">Hologram</button>
+                <button class="toggle-btn" data-mix="chromatic">RGB Split</button>
+                <button class="toggle-btn" data-mix="trail">Motion Trail</button>
+                <button class="toggle-btn" data-mix="blur">Radial Blur</button>
+                <button class="toggle-btn" data-mix="scan">Scanline</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="info">
+        Mouse: Move to interact | Click: Trigger effect
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height, centerX, centerY;
+        let mouseX = 0, mouseY = 0;
+        let targetMouseX = 0, targetMouseY = 0;
+        
+        // 상태
+        let currentStyle = '3d';
+        let mixEffects = new Set();
+        let time = 0;
+        let particles = [];
+        let rotation3D = { x: 0, y: 0 };
+        let explosionActive = false;
+        
+        // 초기화
+        function init() {
+            resize();
+            window.addEventListener('resize', resize);
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('click', handleClick);
+            
+            // 컨트롤 버튼
+            document.querySelectorAll('.effect-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentStyle = btn.dataset.style;
+                    resetEffect();
+                });
+            });
+            
+            document.querySelectorAll('.toggle-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    btn.classList.toggle('active');
+                    const effect = btn.dataset.mix;
+                    if (mixEffects.has(effect)) {
+                        mixEffects.delete(effect);
+                    } else {
+                        mixEffects.add(effect);
+                    }
+                });
+            });
+            
+            // 파티클 초기화
+            initParticles();
+            
+            document.getElementById('loading').style.display = 'none';
+            animate();
+        }
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+        
+        function handleMouseMove(e) {
+            targetMouseX = e.clientX;
+            targetMouseY = e.clientY;
+        }
+        
+        function handleClick() {
+            explosionActive = true;
+            setTimeout(() => explosionActive = false, 1000);
+        }
+        
+        function resetEffect() {
+            particles = [];
+            initParticles();
+            explosionActive = false;
+        }
+        
+        // 파티클 초기화
+        function initParticles() {
+            const text = 'PREEDOM';
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            const fontSize = Math.min(width * 0.15, 120);
+            
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            
+            tempCtx.font = `bold ${fontSize}px Arial Black`;
+            tempCtx.textAlign = 'center';
+            tempCtx.textBaseline = 'middle';
+            tempCtx.fillStyle = 'white';
+            tempCtx.fillText(text, width / 2, height / 2);
+            
+            const imageData = tempCtx.getImageData(0, 0, width, height);
+            const gap = 4;
+            
+            for (let y = 0; y < height; y += gap) {
+                for (let x = 0; x < width; x += gap) {
+                    const index = (y * width + x) * 4;
+                    const alpha = imageData.data[index + 3];
+                    
+                    if (alpha > 128) {
+                        particles.push({
+                            x: x,
+                            y: y,
+                            originX: x,
+                            originY: y,
+                            vx: 0,
+                            vy: 0,
+                            size: Math.random() * 2 + 1,
+                            color: `hsl(${Math.random() * 360}, 70%, 60%)`,
+                            angle: Math.random() * Math.PI * 2,
+                            speed: Math.random() * 2 + 1
+                        });
+                    }
+                }
+            }
+        }
+        
+        // 애니메이션 루프
+        function animate() {
+            time += 0.01;
+            
+            // 마우스 부드럽게
+            mouseX += (targetMouseX - mouseX) * 0.1;
+            mouseY += (targetMouseY - mouseY) * 0.1;
+            
+            // 배경
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.95)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Mix Effects - Scanline
+            if (mixEffects.has('scan')) {
+                drawScanline();
+            }
+            
+            // Main Style
+            ctx.save();
+            
+            switch(currentStyle) {
+                case '3d':
+                    draw3DRotation();
+                    break;
+                case 'particle':
+                    drawParticleExplosion();
+                    break;
+                case 'glitch':
+                    drawGlitch();
+                    break;
+                case 'liquid':
+                    drawLiquid();
+                    break;
+                case 'kinetic':
+                    drawKinetic();
+                    break;
+            }
+            
+            ctx.restore();
+            
+            // Mix Effects - Post Processing
+            if (mixEffects.has('neon')) {
+                applyNeonGlow();
+            }
+            
+            if (mixEffects.has('hologram')) {
+                applyHologram();
+            }
+            
+            if (mixEffects.has('chromatic')) {
+                applyChromaticAberration();
+            }
+            
+            if (mixEffects.has('blur')) {
+                applyRadialBlur();
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // ===== MAIN STYLES =====
+        
+        // 1. 3D Rotation
+        function draw3DRotation() {
+            const text = 'PREEDOM';
+            const fontSize = Math.min(width * 0.15, 120);
+            
+            rotation3D.x += (mouseY - centerY) * 0.00001;
+            rotation3D.y += (mouseX - centerX) * 0.00001;
+            
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            
+            // 3D 변환 시뮬레이션
+            const rotX = rotation3D.x + Math.sin(time) * 0.3;
+            const rotY = rotation3D.y + Math.cos(time * 0.7) * 0.3;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const angle = (i / text.length) * Math.PI * 2 + time;
+                const radius = 150;
+                
+                const x = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                const y = 0;
+                
+                // 3D to 2D projection
+                const scale = 300 / (300 + z);
+                const projX = x * scale * Math.cos(rotY);
+                const projY = y * scale + x * scale * Math.sin(rotX);
+                
+                ctx.save();
+                ctx.translate(projX, projY);
+                ctx.scale(scale, scale);
+                
+                // 그라데이션
+                const gradient = ctx.createLinearGradient(-50, -50, 50, 50);
+                gradient.addColorStop(0, '#ff006e');
+                gradient.addColorStop(0.5, '#8338ec');
+                gradient.addColorStop(1, '#3a86ff');
+                
+                ctx.font = `bold ${fontSize}px Arial Black`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = gradient;
+                ctx.fillText(char, 0, 0);
+                
+                // 그림자
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                ctx.lineWidth = 2;
+                ctx.strokeText(char, 0, 0);
+                
+                ctx.restore();
+            }
+            
+            ctx.restore();
+        }
+        
+        // 2. Particle Explosion
+        function drawParticleExplosion() {
+            particles.forEach((p, i) => {
+                if (explosionActive) {
+                    // 폭발
+                    const dx = p.x - mouseX;
+                    const dy = p.y - mouseY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const force = Math.max(0, 200 - dist) * 0.5;
+                    
+                    p.vx += (dx / dist) * force * 0.01;
+                    p.vy += (dy / dist) * force * 0.01;
+                } else {
+                    // 원래 위치로
+                    p.vx += (p.originX - p.x) * 0.01;
+                    p.vy += (p.originY - p.y) * 0.01;
+                }
+                
+                p.vx *= 0.95;
+                p.vy *= 0.95;
+                
+                p.x += p.vx;
+                p.y += p.vy;
+                
+                // 마우스 인터랙션
+                const dx = mouseX - p.x;
+                const dy = mouseY - p.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < 100) {
+                    const angle = Math.atan2(dy, dx);
+                    const force = (100 - dist) / 100;
+                    p.x -= Math.cos(angle) * force * 3;
+                    p.y -= Math.sin(angle) * force * 3;
+                }
+                
+                // 그리기
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Trail
+                if (mixEffects.has('trail')) {
+                    ctx.strokeStyle = p.color + '33';
+                    ctx.lineWidth = p.size;
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y);
+                    ctx.lineTo(p.x - p.vx * 5, p.y - p.vy * 5);
+                    ctx.stroke();
+                }
+            });
+        }
+        
+        // 3. Glitch / Cyberpunk
+        function drawGlitch() {
+            const text = 'PREEDOM';
+            const fontSize = Math.min(width * 0.15, 120);
+            
+            ctx.font = `bold ${fontSize}px Arial Black`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // 메인 텍스트
+            for (let i = 0; i < 3; i++) {
+                const offsetX = (Math.random() - 0.5) * 10 * Math.sin(time * 5);
+                const offsetY = (Math.random() - 0.5) * 5 * Math.sin(time * 7);
+                
+                ctx.save();
+                ctx.translate(centerX + offsetX, centerY + offsetY);
+                
+                if (i === 0) {
+                    ctx.fillStyle = '#ff0055';
+                    ctx.globalAlpha = 0.7;
+                } else if (i === 1) {
+                    ctx.fillStyle = '#00ffff';
+                    ctx.globalAlpha = 0.7;
+                } else {
+                    ctx.fillStyle = 'white';
+                    ctx.globalAlpha = 1;
+                }
+                
+                ctx.fillText(text, 0, 0);
+                ctx.restore();
+            }
+            
+            // 글리치 라인
+            if (Math.random() > 0.95) {
+                ctx.fillStyle = 'rgba(255, 0, 85, 0.5)';
+                ctx.fillRect(0, Math.random() * height, width, 2);
+            }
+            
+            // 블록 노이즈
+            if (Math.random() > 0.9) {
+                const blocks = 5;
+                for (let i = 0; i < blocks; i++) {
+                    const x = Math.random() * width;
+                    const y = Math.random() * height;
+                    const w = Math.random() * 100 + 50;
+                    const h = Math.random() * 20 + 5;
+                    
+                    const imageData = ctx.getImageData(x, y, w, h);
+                    ctx.putImageData(imageData, x + (Math.random() - 0.5) * 20, y);
+                }
+            }
+        }
+        
+        // 4. Liquid Wave
+        function drawLiquid() {
+            const text = 'PREEDOM';
+            const fontSize = Math.min(width * 0.15, 120);
+            
+            ctx.font = `bold ${fontSize}px Arial Black`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const textWidth = ctx.measureText(text).width;
+            const startX = centerX - textWidth / 2;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const charWidth = ctx.measureText(char).width;
+                const x = startX + ctx.measureText(text.substring(0, i)).width + charWidth / 2;
+                
+                // 웨이브 효과
+                const wave1 = Math.sin(time * 2 + i * 0.5) * 20;
+                const wave2 = Math.cos(time * 3 + i * 0.3) * 15;
+                const wave3 = Math.sin(time * 1.5 + i * 0.7) * 10;
+                
+                const y = centerY + wave1 + wave2 + wave3;
+                
+                // 마우스 인터랙션
+                const dx = mouseX - x;
+                const dy = mouseY - y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const pull = Math.max(0, 200 - dist) / 200;
+                
+                const finalX = x + dx * pull * 0.3;
+                const finalY = y + dy * pull * 0.3;
+                
+                // 그라데이션 (홀로그램 느낌)
+                const gradient = ctx.createLinearGradient(
+                    finalX - 50, finalY - 50,
+                    finalX + 50, finalY + 50
+                );
+                
+                const hue = (time * 50 + i * 30) % 360;
+                gradient.addColorStop(0, `hsl(${hue}, 100%, 50%)`);
+                gradient.addColorStop(0.5, `hsl(${hue + 60}, 100%, 60%)`);
+                gradient.addColorStop(1, `hsl(${hue + 120}, 100%, 50%)`);
+                
+                ctx.save();
+                ctx.translate(finalX, finalY);
+                
+                // 왜곡 효과
+                const scaleX = 1 + Math.sin(time * 2 + i) * 0.1;
+                const scaleY = 1 + Math.cos(time * 2 + i) * 0.1;
+                ctx.scale(scaleX, scaleY);
+                
+                ctx.fillStyle = gradient;
+                ctx.fillText(char, 0, 0);
+                
+                ctx.restore();
+            }
+        }
+        
+        // 5. Kinetic Motion
+        function drawKinetic() {
+            const text = 'PREEDOM';
+            const fontSize = Math.min(width * 0.15, 120);
+            
+            ctx.font = `bold ${fontSize}px Arial Black`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const mouseDistX = (mouseX - centerX) / width;
+            const mouseDistY = (mouseY - centerY) / height;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const progress = i / text.length;
+                
+                // 위치 계산
+                const baseX = centerX + (progress - 0.5) * fontSize * 2;
+                const baseY = centerY;
+                
+                // 마우스에 반응하는 오프셋
+                const offsetX = mouseDistX * 100 * (progress - 0.5);
+                const offsetY = mouseDistY * 100 * (progress - 0.5);
+                
+                // 탄성 효과
+                const elasticX = Math.sin(time * 3 + i) * 10;
+                const elasticY = Math.cos(time * 2 + i) * 10;
+                
+                const x = baseX + offsetX + elasticX;
+                const y = baseY + offsetY + elasticY;
+                
+                // 회전
+                const rotation = mouseDistX * 0.5 + Math.sin(time + i) * 0.2;
+                
+                // 스케일
+                const scale = 1 + Math.abs(mouseDistX) * 0.3 + Math.sin(time * 2 + i) * 0.1;
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(rotation);
+                ctx.scale(scale, scale);
+                
+                // 그라데이션
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, fontSize);
+                gradient.addColorStop(0, '#ff006e');
+                gradient.addColorStop(0.5, '#8338ec');
+                gradient.addColorStop(1, '#3a86ff');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillText(char, 0, 0);
+                
+                // 그림자
+                ctx.shadowColor = '#ff006e';
+                ctx.shadowBlur = 20;
+                ctx.shadowOffsetX = 5;
+                ctx.shadowOffsetY = 5;
+                
+                ctx.restore();
+            }
+        }
+        
+        // ===== MIX EFFECTS =====
+        
+        function drawScanline() {
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            
+            for (let y = 0; y < height; y += 4) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+        
+        function applyNeonGlow() {
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.filter = 'blur(10px)';
+            ctx.drawImage(canvas, 0, 0);
+            ctx.filter = 'none';
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        
+        function applyHologram() {
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, 'rgba(0, 255, 255, 0.1)');
+            gradient.addColorStop(0.5, 'rgba(255, 0, 255, 0.1)');
+            gradient.addColorStop(1, 'rgba(0, 255, 255, 0.1)');
+            
+            ctx.fillStyle = gradient;
+            ctx.globalCompositeOperation = 'screen';
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalCompositeOperation = 'source-over';
+            
+            // 스캔 라인
+            const scanY = (time * 200) % height;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(0, scanY, width, 2);
+        }
+        
+        function applyChromaticAberration() {
+            const offset = 3;
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const idx = i / 4;
+                const x = idx % width;
+                const y = Math.floor(idx / width);
+                
+                if (x < offset) continue;
+                
+                const leftIdx = ((y * width) + (x - offset)) * 4;
+                data[i] = data[leftIdx]; // R from left
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+        
+        function applyRadialBlur() {
+            // 간단한 radial blur 시뮬레이션
+            ctx.globalAlpha = 0.05;
+            for (let i = 0; i < 3; i++) {
+                const scale = 1 + i * 0.01;
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.scale(scale, scale);
+                ctx.translate(-centerX, -centerY);
+                ctx.drawImage(canvas, 0, 0);
+                ctx.restore();
+            }
+            ctx.globalAlpha = 1;
+        }
+        
+        // 시작
+        init();
+    </script>
+</body>
+</html>
